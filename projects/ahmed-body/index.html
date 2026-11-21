@@ -12,6 +12,18 @@
         "three": "../../assets/vendor/three/build/three.module.min.js",
         "three/addons/": "../../assets/vendor/three/addons/" } }
   </script>
+  <style>
+    figure { margin: 0; }
+    figure img { display: block; width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--line); background: var(--bg); }
+    figcaption { color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
+    .figs { display: grid; gap: 20px; grid-template-columns: 1fr 1fr; }
+    .legend { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-family: var(--mono); font-size: 0.8rem; color: var(--text-2); }
+    .legend .bar { flex: 0 1 320px; height: 10px; border-radius: 999px;
+      background: linear-gradient(90deg, #30123b 0%, #4454c4 9%, #4490fe 18%, #1fc8de 27%, #29efa2 36%, #7dff56 45%,
+                  #c1f334 55%, #f1ca3a 64%, #fe922a 73%, #ea4f0d 82%, #be2102 91%, #7a0403 100%); }
+    .good { color: #57c785; }
+    @media (max-width: 760px) { .figs { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
 
@@ -29,37 +41,94 @@
     <p class="lede">The Ahmed body is the standard test shape for automotive CFD: a simplified car with a rounded nose and a slanted rear.
       Its wake is very sensitive to the slant angle, which makes it a tough check on turbulence modelling.
       I'm using it to validate my OpenFOAM workflow before trusting it on real vehicles.</p>
-    <span class="status wip">In progress</span>
+    <span class="status wip">In progress · drag validated</span>
   </section>
 
   <section style="padding-top:0">
-    <div class="viewer" data-model="models/ahmed-body.glb" data-up="z" data-flow="+x"></div>
-    <p class="muted" style="font-size:0.85rem;margin-top:8px">Geometry: 25° slant, standard dimensions. Replace with a pressure-coloured surface from ParaView once results are in.</p>
+    <div class="stats">
+      <div class="stat"><div class="label">Drag coefficient</div><div class="value">0.298</div><div class="note">Mean of iterations 1501–2000</div></div>
+      <div class="stat"><div class="label">Experiment</div><div class="value" style="white-space:nowrap">0.285–0.299</div><div class="note">Ahmed 1984 · Lienhart &amp; Becker 2003</div></div>
+      <div class="stat"><div class="label">Lift coefficient</div><div class="value">0.282</div><div class="note">Mean of iterations 1501–2000</div></div>
+      <div class="stat"><div class="label">Mesh</div><div class="value">1.54<span class="unit">M cells</span></div><div class="note">snappyHexMesh, half model</div></div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <h2>Surface pressure</h2>
+    <div class="viewer" data-model="models/ahmed-cp.glb" data-up="z" data-flow="+x"></div>
+    <div class="legend"><span>C<sub>p</sub> −1.2</span><span class="bar"></span><span>1.0</span></div>
+    <p class="muted" style="font-size:0.85rem;margin-top:8px">Pressure coefficient C<sub>p</sub> = p / (½ρU²) on the body, from the final iteration.
+      The nose is the stagnation point (C<sub>p</sub> ≈ 1). The air speeds up around the curved nose edges, which gives strong suction there (deep blue),
+      and again at the top of the slant. Only half the body was simulated; it is mirrored here.</p>
+  </section>
+
+  <section style="padding-top:0">
+    <h2>The flow</h2>
+    <figure style="margin-bottom:20px">
+      <img src="images/midplane-velocity.png" alt="Velocity on the centre plane of the Ahmed body, showing the slow wake behind the slant and base" loading="lazy">
+      <figcaption>Velocity on the centre plane, as a fraction of the 40 m/s free stream. The flow stays attached over the roof, separates
+        over the 25° slant, and leaves a low-speed recirculation zone (dark blue) behind the vertical base.</figcaption>
+    </figure>
+    <div class="figs">
+      <figure>
+        <img src="images/streamlines.png" alt="Streamlines in the wake: a pair of vortices from the slant side edges and recirculation behind the base" loading="lazy">
+        <figcaption>Wake streamlines. The two bundles from the slant's side edges are the counter-rotating C-pillar vortices
+          that make the 25° slant so sensitive. The loops behind the base are the recirculation bubble.</figcaption>
+      </figure>
+      <figure>
+        <img src="images/cp-surface.png" alt="Pressure coefficient on the body, front three-quarter view" loading="lazy">
+        <figcaption>The same pressure field rendered in ParaView, front three-quarter view.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <h2>Convergence</h2>
+    <div class="two-col">
+      <div class="panel">
+        <p class="chart-title">Drag coefficient vs iteration</p>
+        <p class="chart-sub">Reaches the measured range (orange band) within about 200 iterations, then oscillates around it</p>
+        <img src="images/cd-history.svg" alt="Drag coefficient history converging to 0.298, inside the experimental band" style="width:100%" loading="lazy">
+      </div>
+      <div class="panel">
+        <p class="chart-title">Solver residuals</p>
+        <p class="chart-sub">Drop 2–3 orders of magnitude, then level off as the steady solver tracks the unsteady wake</p>
+        <img src="images/residuals.svg" alt="Initial residuals for U, p, k and omega over 2000 iterations" style="width:100%" loading="lazy">
+      </div>
+    </div>
+    <p class="muted" style="font-size:0.85rem;margin-top:12px">The wake behind a bluff body is genuinely unsteady, so a steady solver
+      never fully converges; it oscillates about the mean. That's why C<sub>d</sub> is averaged over the last 500 iterations
+      (it varies between 0.287 and 0.314 in that window).</p>
   </section>
 
   <section class="two-col">
     <div class="panel">
-      <h2>Geometry</h2>
+      <h2>Setup</h2>
       <table>
-        <tr><td>Length</td><td>1044 mm</td></tr>
-        <tr><td>Width</td><td>389 mm</td></tr>
-        <tr><td>Height</td><td>288 mm</td></tr>
-        <tr><td>Nose radius</td><td>100 mm</td></tr>
-        <tr><td>Slant length</td><td>222 mm</td></tr>
-        <tr><td>Slant angle</td><td>25° (this case)</td></tr>
-        <tr><td>Ground clearance</td><td>50 mm, on four 30 mm stilts</td></tr>
+        <tr><td>Body</td><td>1044 × 389 × 288 mm, 100 mm nose radius, 222 mm slant at 25°</td></tr>
+        <tr><td>Ground clearance</td><td>50 mm (support stilts left out, as is common)</td></tr>
         <tr><td>Flow speed</td><td>40 m/s → Re<sub>L</sub> ≈ 2.8 × 10⁶</td></tr>
+        <tr><td>Domain</td><td>Half model with symmetry plane; ~3 L upstream, ~6 L downstream; 2.5 % blockage</td></tr>
+        <tr><td>Mesh</td><td>snappyHexMesh, 1.54 M cells, 5 prism layers, 3.1–1.6 mm cells on the body and its edges</td></tr>
+        <tr><td>Wall treatment</td><td>Wall functions, mean y<sup>+</sup> ≈ 32 on the body</td></tr>
+        <tr><td>Solver</td><td>simpleFoam (steady RANS), k-ω SST, SIMPLEC, linearUpwind for U</td></tr>
+        <tr><td>Boundaries</td><td>Moving ground at 40 m/s, slip top and side walls, zero-pressure outlet</td></tr>
+        <tr><td>Run</td><td>2000 iterations on 4 cores, about 70 minutes</td></tr>
       </table>
     </div>
     <div class="panel">
-      <h2>Validation plan</h2>
+      <h2>Validation</h2>
       <table>
-        <tr><th>Quantity</th><th>Experiment</th><th>My CFD</th><th>Error</th></tr>
-        <tr><td>Drag coefficient C<sub>d</sub></td><td>—</td><td>—</td><td>—</td></tr>
-        <tr><td>Slant-surface pressure</td><td>—</td><td>—</td><td>—</td></tr>
-        <tr><td>Wake velocity profiles</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><th>Quantity</th><th>Experiment</th><th>My CFD</th><th>Result</th></tr>
+        <tr><td>Drag coefficient C<sub>d</sub></td><td>0.285–0.299</td><td>0.298</td><td class="good">Within range</td></tr>
+        <tr><td>Slant-surface pressure</td><td>—</td><td>—</td><td>Next</td></tr>
+        <tr><td>Wake velocity profiles</td><td>—</td><td>—</td><td>Next</td></tr>
       </table>
-      <p class="muted" style="font-size:0.85rem;margin:12px 0 0">Reference: Ahmed, Ramm &amp; Faltin (1984), SAE 840300, plus the ERCOFTAC wake measurements.</p>
+      <p class="muted" style="font-size:0.85rem;margin:12px 0 0">References: Ahmed, Ramm &amp; Faltin (1984), SAE 840300;
+        Lienhart &amp; Becker (2003), SAE 2003-01-0656, and the ERCOFTAC wake measurements.</p>
+      <p class="muted" style="font-size:0.85rem;margin:12px 0 0">A matching total C<sub>d</sub> doesn't guarantee the split between slant and base drag is right.
+        Steady RANS is known to struggle with the partly separated 25° slant, so the next step is to compare slant pressures
+        and wake profiles against the ERCOFTAC data.</p>
     </div>
   </section>
 
