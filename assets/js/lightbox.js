@@ -33,18 +33,39 @@
     return img.alt || "";
   }
 
+  // Size the picture ourselves (fit the window, keep its shape) so it centres the same in
+  // every browser. Charts (SVG) are scaled up to fill; photos up to 1.25x their pixel size.
+  function fit() {
+    if (!box.classList.contains("open")) return;
+    const nw = big.naturalWidth, nh = big.naturalHeight;
+    if (!nw || !nh) return;
+    const narrow = innerWidth < 760;
+    const availW = innerWidth - (narrow ? 32 : 160);
+    const availH = innerHeight - (narrow ? 150 : 110) - cap.offsetHeight;
+    const maxUp = /\.svg(\?|#|$)/i.test(big.src) ? 4 : 1.25;
+    const k = Math.min(availW / nw, Math.max(80, availH) / nh, maxUp);
+    big.style.width = Math.round(nw * k) + "px";
+    big.style.height = Math.round(nh * k) + "px";
+    cap.style.maxWidth = Math.max(Math.round(nw * k), Math.min(availW, 640)) + "px";
+  }
+  big.addEventListener("load", fit);
+  window.addEventListener("resize", fit);
+
   function show(i) {
     cur = (i + imgs.length) % imgs.length;
     const img = imgs[cur];
-    big.src = img.currentSrc || img.src;
-    big.alt = img.alt;
     cap.innerHTML = captionFor(img);
+    big.alt = img.alt;
+    big.style.width = big.style.height = "";
+    const src = img.currentSrc || img.src;
+    if (big.src === src && big.complete) fit(); else big.src = src;
     box.classList.toggle("single", imgs.length < 2);
   }
   function open(i) {
     lastFocus = document.activeElement;
     show(i);
     box.classList.add("open");
+    fit();
     document.documentElement.style.overflow = "hidden";
     box.querySelector(".lb-close").focus();
   }

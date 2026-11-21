@@ -226,29 +226,31 @@ img.zoomable { cursor: zoom-in; transition: filter 0.15s, box-shadow 0.15s; }
 img.zoomable:hover { filter: brightness(1.08); }
 img.zoomable:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .lightbox {
-  position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; gap: 12px;
-  padding: 56px 16px 24px; background: rgba(5, 8, 18, 0.92);
+  position: fixed; inset: 0; z-index: 1000; display: none; place-items: center;
+  padding: 24px 16px; overflow: auto; background: rgba(5, 8, 18, 0.92);
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); cursor: zoom-out;
 }
-.lightbox.open { display: flex; animation: lb-in 0.18s ease-out; }
+.lightbox.open { display: grid; animation: lb-in 0.18s ease-out; }
 @keyframes lb-in { from { opacity: 0; } to { opacity: 1; } }
-.lb-fig { margin: 0; display: flex; flex-direction: column; align-items: center; max-width: min(1600px, 100%); min-width: 0; }
+.lb-fig { margin: 0; display: block; text-align: center; }
 .lb-fig img {
-  display: block; max-width: 100%; max-height: calc(100vh - 150px); width: auto; height: auto;
+  display: block; margin: 0 auto; max-width: none; max-height: none;
   border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);
 }
-.lb-fig figcaption { color: var(--text-2); font-size: 0.9rem; margin-top: 12px; max-width: 900px; text-align: center; cursor: default; }
+.lb-fig figcaption { color: var(--text-2); font-size: 0.9rem; margin: 12px auto 0; text-align: center; cursor: default; }
 .lb-close, .lb-nav {
   font: 400 1.6rem/1 var(--sans); color: var(--text); cursor: pointer; flex: none;
   background: rgba(23, 32, 54, 0.8); border: 1px solid var(--line); border-radius: 999px; width: 44px; height: 44px;
 }
-.lb-close { position: absolute; top: 12px; right: 16px; }
+.lb-close { position: fixed; top: 12px; right: 16px; }
+.lb-nav { position: fixed; top: 50%; transform: translateY(-50%); }
+.lb-prev { left: 20px; } .lb-next { right: 20px; }
 .lb-close:hover, .lb-nav:hover { border-color: var(--accent); }
 .lightbox.single .lb-nav { display: none; }
 @media (max-width: 760px) {
-  .lb-nav { position: absolute; bottom: 16px; }
+  .lb-nav { top: auto; bottom: 16px; transform: none; }
   .lb-prev { left: 16px; } .lb-next { right: 16px; }
-  .lightbox { padding-bottom: 72px; }
+  .lightbox { padding: 64px 16px 76px; }
 }
 
 /* phones: keep panels and tables inside the screen width */
