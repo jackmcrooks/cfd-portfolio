@@ -50,6 +50,9 @@
     .mini-key i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
     .mini-key i.sq { border-radius: 1px; }
     @media (max-width: 600px) { .minis { grid-template-columns: 1fr; } }
+    /* wide screens: charts beside the flow picture so both stay in view while you change the angle */
+    @media (min-width: 980px) { .explore { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 14px; align-items: start; }
+      .explore .minis { grid-template-columns: 1fr; margin-top: 0; } }
     .delta { font: 0.75rem var(--mono); }
 
     /* charts */
@@ -124,6 +127,7 @@
         <button class="btn" id="clearSeeds">Clear my streamlines</button>
       </div>
 
+      <div class="explore"><div class="explore-main">
       <div class="flow-wrap" id="flowWrap">
         <canvas id="flow"></canvas>
         <div class="readout" id="readout">hover the flow</div>
@@ -131,9 +135,10 @@
         <div class="hint">drag the tail to pitch the wing · click: add a streamline</div>
       </div>
       <div class="cbar"><span id="cbLo"></span><canvas id="cbar" width="360" height="10"></canvas><span id="cbHi"></span><span id="cbName" class="muted"></span></div>
+      </div>
+      <div class="minis" id="minis"></div></div>
 
       <div class="strip" id="strip"></div>
-      <div class="minis" id="minis"></div>
     </div>
   </section>
 
@@ -279,6 +284,6 @@
 
 <footer><div class="wrap">© Jack Crooks · Hosted on GitHub Pages</div></footer>
 
-<script type="module" src="airfoil.js?v=7"></script>
+<script type="module" src="airfoil.js?v=8"></script>
 </body>
 </html>
