@@ -105,9 +105,9 @@ function makeChart(host, f, tipText) {
     // current speed marker
     const cy = f(cur);
     g += `<line x1="${X(cur)}" x2="${X(cur)}" y1="${m.t}" y2="${H - m.b}" stroke="#f2a03d" stroke-width="1" stroke-dasharray="3 3"/>`;
-    g += `<circle cx="${X(cur)}" cy="${Y(cy)}" r="5" fill="#f2a03d" stroke="#111827" stroke-width="2"/>`;
+    g += `<circle cx="${X(cur)}" cy="${Y(cy)}" r="5" fill="#f2a03d" stroke="#0c0c0e" stroke-width="2"/>`;
     // hover layer
-    g += `<g class="hover" style="display:none"><line class="hx" y1="${m.t}" y2="${H - m.b}" stroke="#a9b4c8" stroke-width="1"/><circle class="hc" r="4" fill="#3d8ef0" stroke="#111827" stroke-width="2"/></g>`;
+    g += `<g class="hover" style="display:none"><line class="hx" y1="${m.t}" y2="${H - m.b}" stroke="#a9b4c8" stroke-width="1"/><circle class="hc" r="4" fill="#3d8ef0" stroke="#0c0c0e" stroke-width="2"/></g>`;
     g += `<rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent" class="hit"/>`;
     svg.innerHTML = g;
   }

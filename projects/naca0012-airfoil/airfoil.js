@@ -9,7 +9,7 @@ const $ = (id) => document.getElementById(id);
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const C = { cfd: css("--s-cfd") || "#3d8ef0", exp: css("--s-exp") || "#f2a03d", nasa: css("--s-nasa") || "#57c785",
             line: css("--line") || "#24304a", muted: css("--muted") || "#74819a", text2: css("--text-2") || "#a9b4c8",
-            text: css("--text") || "#e6ebf5", bg: css("--bg") || "#0b1020" };
+            text: css("--text") || "#e6ebf5", bg: css("--bg") || "#000" };
 const fmt = (v, d) => (v == null || Number.isNaN(v) ? "–" : v.toFixed(d));
 const pct = (a, b) => (b ? `${a >= b ? "+" : "−"}${Math.abs((100 * (a - b)) / b).toFixed(1)} %` : "");
 
@@ -287,7 +287,7 @@ function explorer() {
       ctx.fillStyle = C.text; ctx.font = `600 ${fs * 1.15}px Inter, sans-serif`;
       ctx.fillText(`α = ${alpha}°`, te0 + 8, (te1 + y0) / 2 + fs * 0.4);
     }
-    ctx.fillStyle = "#1a2133"; ctx.strokeStyle = "#d9dee8"; ctx.lineWidth = Math.max(1.2, cv.width / 700);
+    ctx.fillStyle = "#111114"; ctx.strokeStyle = "#d9dee8"; ctx.lineWidth = Math.max(1.2, cv.width / 700);
     ctx.beginPath(); OUTLINE.forEach((p, k) => { const [a, b] = toPx(...toWind(p[0], p[1])); k ? ctx.lineTo(a, b) : ctx.moveTo(a, b); });
     ctx.closePath(); ctx.fill(); ctx.stroke();
     if (state.view === "full") {            // grab handle on the trailing edge: drag it to pitch the wing
@@ -300,7 +300,7 @@ function explorer() {
       const [hx, hy] = toPx(...toWind(1, 0)), hr = Math.max(7, cv.width / 110);
       ctx.beginPath(); ctx.arc(hx, hy, hr, 0, 7);
       ctx.fillStyle = drag || hoverTE ? C.text : "rgba(230,235,245,0.75)"; ctx.fill();
-      ctx.lineWidth = 2; ctx.strokeStyle = "#0d1324"; ctx.stroke();
+      ctx.lineWidth = 2; ctx.strokeStyle = "#000"; ctx.stroke();
       const [px0, py0] = toPx(p, 0); ctx.beginPath(); ctx.arc(px0, py0, hr * 0.45, 0, 7); ctx.fillStyle = "#d9dee8"; ctx.fill();
       if (!dragTaught && !drag) {            // one-time label until someone drags it
         ctx.font = `${fs}px Inter, sans-serif`; ctx.fillStyle = C.text;

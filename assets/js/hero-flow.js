@@ -15,7 +15,7 @@ if (canvas) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     R = Math.min(W, H) * 0.16; cx = W * 0.72; cy = H * 0.5;
     parts = Array.from({ length: 420 }, () => spawn(true));
-    ctx.fillStyle = "#0b1020"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
   }
   function spawn(anywhere) {
     return { x: anywhere ? Math.random() * W : -5, y: Math.random() * H, age: 0 };
@@ -25,7 +25,7 @@ if (canvas) {
     return [U * (1 - (R * R * (dx * dx - dy * dy)) / r4), (-U * 2 * R * R * dx * dy) / r4];
   }
   function frame() {
-    ctx.fillStyle = "rgba(11,16,32,0.08)";
+    ctx.fillStyle = "rgba(0,0,0,0.08)";
     ctx.fillRect(0, 0, W, H);
     for (const p of parts) {
       const [u, v] = vel(p.x, p.y);
@@ -39,7 +39,7 @@ if (canvas) {
       const inside = (p.x - cx) ** 2 + (p.y - cy) ** 2 < R * R * 1.02;
       if (p.x > W + 5 || inside || p.age > 900) Object.assign(p, spawn(false));
     }
-    ctx.fillStyle = "#172036";
+    ctx.fillStyle = "#161619";
     ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
     if (!reduce) requestAnimationFrame(frame);
   }
