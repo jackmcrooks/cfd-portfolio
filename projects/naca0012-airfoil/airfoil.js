@@ -195,8 +195,9 @@ function explorer() {
     const i = Math.min(Math.floor(fx), F.nx - 2), j = Math.min(Math.floor(fy), F.ny - 2), a = fx - i, b = fy - j, n = F.nx;
     return (1 - a) * (1 - b) * arr[j * n + i] + a * (1 - b) * arr[j * n + i + 1] + (1 - a) * b * arr[(j + 1) * n + i] + a * b * arr[(j + 1) * n + i + 1];
   }
-  // one colour scale for every angle and both views (covers the extremes: U/Uinf 3.72, Cp -13.2 at 18 deg)
-  const range = () => (state.colour === "speed" ? [0, 3.8] : [-13.5, 1]);
+  // one colour scale for every angle and both views. Speed tops out at 2.2 (red) so the suction side shows up;
+  // faster flow (only near the nose above ~10 deg, max 3.72) stays dark red. Cp covers its full range (-13.2).
+  const range = () => (state.colour === "speed" ? [0, 2.2] : [-13.5, 1]);
   function paintField() {
     const arr = state.colour === "speed" ? F.speed : F.cp, [lo, hi] = range();
     const img = new ImageData(F.nx, F.ny);
@@ -210,7 +211,7 @@ function explorer() {
     // colour bar
     const cb = $("cbar"), c2 = cb.getContext("2d");
     for (let k = 0; k < cb.width; k++) { const [r, g, b] = turbo(k / (cb.width - 1)); c2.fillStyle = `rgb(${r},${g},${b})`; c2.fillRect(k, 0, 1, cb.height); }
-    $("cbLo").textContent = lo.toFixed(1); $("cbHi").textContent = hi.toFixed(1);
+    $("cbLo").textContent = lo.toFixed(1); $("cbHi").textContent = hi.toFixed(1) + (state.colour === "speed" ? "+" : "");
     $("cbName").innerHTML = state.colour === "speed" ? "speed U / U<sub>∞</sub>" : "pressure coefficient C<sub>p</sub>";
   }
   function trace(x, y, dir, maxLen) {   // streamline by RK4 along the unit velocity direction
