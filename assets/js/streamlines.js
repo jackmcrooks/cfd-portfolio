@@ -18,7 +18,7 @@
 import * as THREE from "three";
 
 const DEFAULT_PRESETS = [
-  { name: "Overview", view: "front", rake: "vertical", x: -0.15, y: 0.12, z: 0.2, len: 0.34, n: 18, mirror: true, both: false },
+  { name: "Overview", view: "front", rake: "grid", x: -0.15, y: 0.0, z: 0.2, len: 0.38, n: 64, mirror: false, both: false },
   { name: "C-pillar vortices", view: "behind", rake: "grid", x: 0.8, y: 0.22, z: 0.305, len: 0.05, n: 36, mirror: true, both: false },
   { name: "Base wake", view: "side", rake: "grid", x: 1.12, y: 0.09, z: 0.17, len: 0.2, n: 36, mirror: true, both: true },
   { name: "Roof + slant", view: "side", rake: "vertical", x: -0.15, y: 0.02, z: 0.33, len: 0.12, n: 14, mirror: true, both: false },
