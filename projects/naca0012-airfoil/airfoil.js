@@ -194,10 +194,8 @@ function explorer() {
     const i = Math.min(Math.floor(fx), F.nx - 2), j = Math.min(Math.floor(fy), F.ny - 2), a = fx - i, b = fy - j, n = F.nx;
     return (1 - a) * (1 - b) * arr[j * n + i] + a * (1 - b) * arr[j * n + i + 1] + (1 - a) * b * arr[(j + 1) * n + i] + a * b * arr[(j + 1) * n + i + 1];
   }
-  function range() {
-    if (state.colour === "speed") { let m = 0; F.speed.forEach((v) => { if (v > m) m = v; }); return [0, Math.ceil(m * 10) / 10]; }
-    let m = 0; F.cp.forEach((v) => { if (v < m) m = v; }); return [Math.floor(m * 2) / 2, 1];
-  }
+  // one colour scale for every angle and both views (covers the extremes: U/Uinf 3.72, Cp -13.2 at 18 deg)
+  const range = () => (state.colour === "speed" ? [0, 3.8] : [-13.5, 1]);
   function paintField() {
     const arr = state.colour === "speed" ? F.speed : F.cp, [lo, hi] = range();
     const img = new ImageData(F.nx, F.ny);
