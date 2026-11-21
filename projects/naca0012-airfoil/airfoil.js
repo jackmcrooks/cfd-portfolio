@@ -493,7 +493,8 @@ function calc() {
 // =============================================================
 async function main() {
   [D, FI] = await Promise.all([fetch("data/airfoil-data.json").then((r) => r.json()), fetch("data/fields/index.json").then((r) => r.json())]);
-  $("aTicks").innerHTML = D.runs.map((r) => `<span>${r.alpha}°</span>`).join("");
+  const nT = D.runs.length - 1;            // stop k sits at thumb/2 + k/n of the remaining track width
+  $("aTicks").innerHTML = D.runs.map((r, k) => `<span style="left:calc(var(--th)/2 + (100% - var(--th))*${k / nT})">${r.alpha}°</span>`).join("");
   $("aSlider").addEventListener("input", (e) => setAngle(+e.target.value));
   tabs("polarTabs", "polarTab", polar);
   tabs("surfTabs", "surfTab", surface);

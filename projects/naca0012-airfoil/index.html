@@ -24,9 +24,11 @@
     /* angle picker */
     .angle-pick { display: grid; gap: 6px; margin-bottom: 14px; }
     .angle-pick .row { display: flex; align-items: center; gap: 14px; }
-    .angle-pick input[type="range"] { flex: 1; accent-color: var(--accent); }
+    .angle-pick .slide { flex: 1; min-width: 0; --th: 16px; }
+    .angle-pick input[type="range"] { width: 100%; margin: 0; accent-color: var(--accent); display: block; }
     .angle-pick .big { font: 700 1.6rem var(--sans); font-variant-numeric: tabular-nums; min-width: 72px; }
-    .ticks { display: flex; justify-content: space-between; font: 0.7rem var(--mono); color: var(--muted); padding: 0 2px; }
+    .ticks { position: relative; height: 1.1em; margin-top: 4px; font: 0.7rem var(--mono); color: var(--muted); }
+    .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }   /* centred under each stop */
 
     /* flow explorer */
     .flow-wrap { position: relative; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: #0d1324; }
@@ -99,8 +101,8 @@
     <div class="panel">
       <div class="angle-pick">
         <div class="row"><span class="toollbl">Angle of attack</span><span class="big" id="aOut">10°</span>
-          <input type="range" id="aSlider" min="0" max="9" step="1" value="3" aria-label="Angle of attack"></div>
-        <div class="ticks" id="aTicks"></div>
+          <div class="slide"><input type="range" id="aSlider" min="0" max="9" step="1" value="3" aria-label="Angle of attack">
+            <div class="ticks" id="aTicks"></div></div></div>
       </div>
 
       <div class="toolrow">
@@ -269,6 +271,6 @@
 
 <footer><div class="wrap">© Jack Crooks · Hosted on GitHub Pages</div></footer>
 
-<script type="module" src="airfoil.js?v=3"></script>
+<script type="module" src="airfoil.js?v=4"></script>
 </body>
 </html>
