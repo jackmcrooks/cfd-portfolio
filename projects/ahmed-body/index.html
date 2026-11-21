@@ -45,6 +45,20 @@
   </section>
 
   <section style="padding-top:0">
+    <h2>Interactive streamlines</h2>
+    <p class="muted" style="font-size:0.9rem;margin-top:-4px">Streamlines traced live in your browser from the CFD velocity field.
+      Pick a preset or move the orange seed rake with the controls on the right; every change re-traces the lines.</p>
+    <div class="viewer" data-model="models/ahmed-cp.glb" data-up="z" data-flow="+x"
+         data-zoom="1.15" data-streamlines="models/ahmed-velocity.json" data-controls="sl-controls"></div>
+    <div id="sl-controls"></div>
+    <p class="muted" style="font-size:0.85rem;margin-top:8px">How it works: the final-iteration velocity field was sampled onto a
+      10 mm grid around the body and wake (530 k points, 3 MB) with ParaView. The browser integrates each line with
+      4th-order Runge&ndash;Kutta through that grid, so lines stop at the body and at the edge of the sampled box.
+      Colour is local speed |U|/U<sub>&infin;</sub>; with <em>Animate flow</em> on, the pulses travel at the local flow speed.
+      Coordinates: nose at x = 0, base at x = 1.044 m, ground at z = 0, symmetry plane y = 0.</p>
+  </section>
+
+  <section style="padding-top:0">
     <div class="stats">
       <div class="stat"><div class="label">Drag coefficient</div><div class="value">0.298</div><div class="note">Mean of iterations 1501–2000</div></div>
       <div class="stat"><div class="label">Experiment</div><div class="value" style="white-space:nowrap">0.285–0.299</div><div class="note">Ahmed 1984 · Lienhart &amp; Becker 2003</div></div>
@@ -60,20 +74,6 @@
     <p class="muted" style="font-size:0.85rem;margin-top:8px">Pressure coefficient C<sub>p</sub> = p / (½ρU²) on the body, from the final iteration.
       The nose is the stagnation point (C<sub>p</sub> ≈ 1). The air speeds up around the curved nose edges, which gives strong suction there (deep blue),
       and again at the top of the slant. Only half the body was simulated; it is mirrored here.</p>
-  </section>
-
-  <section style="padding-top:0">
-    <h2>Interactive streamlines</h2>
-    <p class="muted" style="font-size:0.9rem;margin-top:-4px">Streamlines traced live in your browser from the CFD velocity field.
-      Pick a preset or move the orange seed rake with the controls on the right; every change re-traces the lines.</p>
-    <div class="viewer" data-model="models/ahmed-cp.glb" data-up="z" data-flow="+x"
-         data-zoom="1.15" data-streamlines="models/ahmed-velocity.json" data-controls="sl-controls"></div>
-    <div id="sl-controls"></div>
-    <p class="muted" style="font-size:0.85rem;margin-top:8px">How it works: the final-iteration velocity field was sampled onto a
-      10 mm grid around the body and wake (530 k points, 3 MB) with ParaView. The browser integrates each line with
-      4th-order Runge&ndash;Kutta through that grid, so lines stop at the body and at the edge of the sampled box.
-      Colour is local speed |U|/U<sub>&infin;</sub>; with <em>Animate flow</em> on, the pulses travel at the local flow speed.
-      Coordinates: nose at x = 0, base at x = 1.044 m, ground at z = 0, symmetry plane y = 0.</p>
   </section>
 
   <section style="padding-top:0">
@@ -154,5 +154,6 @@
 <footer><div class="wrap">© Jack Crooks · Built with three.js · Hosted on GitHub Pages</div></footer>
 
 <script type="module" src="../../assets/js/viewer.js"></script>
+<script src="../../assets/js/lightbox.js" defer></script>
 </body>
 </html>
