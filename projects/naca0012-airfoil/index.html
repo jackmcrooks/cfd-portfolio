@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NACA 0012 Airfoil Validation · Jack Crooks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <style>
+    /* page-specific pieces; colours come from the site tokens in style.css */
+    :root { --s-cfd: var(--accent); --s-exp: var(--accent-2); --s-nasa: #57c785; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .tabs button, .seg button { font: 500 0.8rem var(--sans); color: var(--text-2); cursor: pointer; background: var(--surface-2);
+      border: 1px solid var(--line); border-radius: 8px; padding: 6px 11px; }
+    .tabs button:hover, .seg button:hover { border-color: var(--accent); color: var(--text); }
+    .tabs button[aria-pressed="true"], .seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .seg { display: inline-flex; gap: 4px; }
+    .toolrow { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; margin-bottom: 12px; }
+    .toollbl { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 6px; }
+    .check { font-size: 0.85rem; color: var(--text-2); display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+    .check input { accent-color: var(--accent); }
+
+    /* angle picker */
+    .angle-pick { display: grid; gap: 6px; margin-bottom: 14px; }
+    .angle-pick .row { display: flex; align-items: center; gap: 14px; }
+    .angle-pick input[type="range"] { flex: 1; accent-color: var(--accent); }
+    .angle-pick .big { font: 700 1.6rem var(--sans); font-variant-numeric: tabular-nums; min-width: 72px; }
+    .ticks { display: flex; justify-content: space-between; font: 0.7rem var(--mono); color: var(--muted); padding: 0 2px; }
+
+    /* flow explorer */
+    .flow-wrap { position: relative; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: #0d1324; }
+    .flow-wrap canvas { display: block; width: 100%; height: auto; cursor: crosshair; touch-action: none; }
+    .flow-wrap .readout { position: absolute; top: 10px; right: 12px; font: 0.75rem var(--mono); color: var(--text-2);
+      background: rgba(11,16,32,0.75); border: 1px solid var(--line); border-radius: 8px; padding: 5px 9px; pointer-events: none; white-space: pre; }
+    .flow-wrap .loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 0.9rem; pointer-events: none; }
+    .flow-wrap .hint { position: absolute; bottom: 8px; left: 12px; font-size: 0.72rem; color: var(--muted); pointer-events: none; }
+    .cbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 10px; font: 0.78rem var(--mono); color: var(--text-2); }
+    .cbar canvas { flex: 0 1 360px; min-width: 0; width: 100%; height: 10px; border-radius: 999px; }
+    @media (max-width: 600px) { .cbar canvas { flex-basis: 55%; } .cbar #cbName { flex-basis: 100%; } .flow-wrap .hint { display: none; } }
+    .strip { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin-top: 14px; }
+    .strip .stat { padding: 10px 14px; }
+    .strip .stat .value { font-size: 1.25rem; }
+    .delta { font: 0.75rem var(--mono); }
+
+    /* charts */
+    .legend-row { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.8rem; color: var(--text-2); margin: 4px 0 8px; }
+    .legend-row .key { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+    .legend-row .key.off { opacity: 0.35; }
+    .legend-row svg { width: 22px; height: 12px; }
+    .chart .tip { z-index: 2; }
+    .pending { color: var(--accent-2); }
+    .good { color: #57c785; }
+    .warn { color: var(--accent-2); }
+    .calc-out .value { font-size: 1.45rem; }
+    .sm-grid { display: grid; gap: 20px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 760px) { .sm-grid { grid-template-columns: 1fr; } .flow-wrap .readout { font-size: 0.68rem; } }
+    details.more { margin-top: 10px; color: var(--text-2); font-size: 0.9rem; }
+    details.more summary { cursor: pointer; color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../../index.html">JACK CROOKS <span>/ CFD</span></a>
+    <nav class="nav"><a href="../../index.html#projects">All projects</a></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- 1. Title -->
+  <section style="padding-top:48px">
+    <div class="eyebrow">OpenFOAM · Validation case · NASA TMR 2DN00</div>
+    <h1 style="font-size:2.6rem">NACA 0012 Airfoil Validation</h1>
+    <p class="lede">The NACA 0012 is the most-tested airfoil there is, and NASA publishes it as a reference case for turbulence models.
+      I ran a full lift polar from 0° to 18° at a Reynolds number of 6 million and compared every angle with wind-tunnel data and
+      NASA's own CFD. Everything on this page is live data from the runs. Pick an angle and explore the flow.</p>
+    <span class="status wip">Complete · mesh study in progress</span>
+  </section>
+
+  <!-- 2. Key numbers -->
+  <section style="padding-top:0">
+    <div class="stats">
+      <div class="stat"><div class="label">Drag at 0°</div><div class="value">0.00794</div><div class="note">NASA SST 0.00809 · Ladson 0.00809 (−1.9 %)</div></div>
+      <div class="stat"><div class="label">Lift vs experiment</div><div class="value">±1<span class="unit">%</span></div><div class="note">8° to 17° (Ladson, tripped)</div></div>
+      <div class="stat"><div class="label">Angles</div><div class="value">10</div><div class="note">0–18°, one run each, ~10 min</div></div>
+      <div class="stat"><div class="label">Mesh</div><div class="value">113<span class="unit">k cells</span></div><div class="note">Own structured C-mesh, y<sup>+</sup> &lt; 1</div></div>
+    </div>
+  </section>
+
+  <!-- 3. Flow explorer -->
+  <section style="padding-top:0" id="explore">
+    <h2>Flow explorer</h2>
+    <p class="muted" style="font-size:0.9rem;margin-top:-4px">The velocity and pressure fields from each run, drawn in your browser.
+      Drag the slider to change the angle of attack, click anywhere to trace a streamline from that point, and hover for values.</p>
+
+    <div class="panel">
+      <div class="angle-pick">
+        <div class="row"><span class="toollbl">Angle of attack</span><span class="big" id="aOut">10°</span>
+          <input type="range" id="aSlider" min="0" max="9" step="1" value="3" aria-label="Angle of attack"></div>
+        <div class="ticks" id="aTicks"></div>
+      </div>
+
+      <div class="toolrow">
+        <div><span class="toollbl">View</span><span class="seg" id="viewSeg">
+          <button data-v="full" aria-pressed="true">Whole airfoil</button><button data-v="le">Leading edge</button></span></div>
+        <div><span class="toollbl">Colour</span><span class="seg" id="colSeg">
+          <button data-c="speed" aria-pressed="true">Speed U/U∞</button><button data-c="cp">Pressure C<sub>p</sub></button></span></div>
+        <label class="check"><input type="checkbox" id="optStream" checked> Streamlines</label>
+        <label class="check"><input type="checkbox" id="optAnim" checked> Animate</label>
+        <label class="check"><input type="checkbox" id="optMesh"> Show mesh</label>
+        <button class="btn" id="clearSeeds">Clear my streamlines</button>
+      </div>
+
+      <div class="flow-wrap" id="flowWrap">
+        <canvas id="flow"></canvas>
+        <div class="readout" id="readout">hover the flow</div>
+        <div class="loading" id="flowLoading">loading…</div>
+        <div class="hint">click: add a streamline · flow comes from the left at the angle of attack</div>
+      </div>
+      <div class="cbar"><span id="cbLo"></span><canvas id="cbar" width="360" height="10"></canvas><span id="cbHi"></span><span id="cbName" class="muted"></span></div>
+
+      <div class="strip" id="strip"></div>
+    </div>
+  </section>
+
+  <!-- 4. Polar -->
+  <section style="padding-top:0" id="polar">
+    <h2>Lift and drag against the data</h2>
+    <div class="panel">
+      <div class="tabs" id="polarTabs">
+        <button data-t="cl" aria-pressed="true">Lift curve</button>
+        <button data-t="polar">Drag polar</button>
+        <button data-t="cd">Drag vs angle</button>
+        <button data-t="ld">Lift / drag</button>
+      </div>
+      <p class="chart-sub" id="polarSub"></p>
+      <div class="legend-row" id="polarLegend"></div>
+      <div class="chart" id="polarChart"></div>
+      <p class="muted" style="font-size:0.85rem;margin:10px 0 0">Click an OpenFOAM point to select that angle everywhere on the page.
+        Ladson's data is NASA TM 4074 with the boundary layer tripped (80 grit), so it compares directly with a fully turbulent model.
+        Past 17° the real airfoil stalls; the steady SST model does not (see <a href="#learned">what I learned</a>).</p>
+    </div>
+  </section>
+
+  <!-- 5. Surface -->
+  <section style="padding-top:0" id="surface">
+    <h2>On the surface</h2>
+    <div class="panel">
+      <div class="toolrow">
+        <span class="tabs" id="surfTabs" style="margin:0">
+          <button data-t="cp" aria-pressed="true">Pressure C<sub>p</sub></button>
+          <button data-t="cf">Skin friction C<sub>f</sub></button></span>
+        <span class="muted" style="font-size:0.85rem" id="surfAngle"></span>
+      </div>
+      <p class="chart-sub" id="surfSub"></p>
+      <div class="legend-row" id="surfLegend"></div>
+      <div class="chart" id="surfChart"></div>
+      <p class="muted" style="font-size:0.85rem;margin:10px 0 0" id="surfNote"></p>
+    </div>
+  </section>
+
+  <!-- 6. Convergence + mesh study -->
+  <section style="padding-top:0">
+    <div class="two-col">
+      <div class="panel">
+        <h3>How the solution settled</h3>
+        <p class="chart-sub" id="convSub"></p>
+        <div class="tabs" id="convTabs"><button data-t="cl" aria-pressed="true">C<sub>l</sub></button><button data-t="cd">C<sub>d</sub></button></div>
+        <div class="chart" id="convChart"></div>
+        <p class="muted" style="font-size:0.82rem;margin:8px 0 0">Shaded: the last 500 iterations, averaged for the reported value.</p>
+      </div>
+      <div class="panel">
+        <h3>Mesh independence <span class="status wip" style="margin-left:6px">running</span></h3>
+        <p class="chart-sub">Drag on three meshes of the same family (each 2× finer per direction)</p>
+        <div class="tabs" id="gridTabs"><button data-t="0" aria-pressed="true">α = 0°</button><button data-t="15">α = 15°</button></div>
+        <div class="chart" id="gridChart"></div>
+        <p class="muted" style="font-size:0.82rem;margin:8px 0 0" id="gridNote"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. Calculator -->
+  <section style="padding-top:0" id="calc">
+    <h2>Put it on a wing</h2>
+    <p class="muted" style="font-size:0.9rem;margin-top:-4px">Lift and drag of a straight wing section with this airfoil, using the CFD
+      coefficients at the angle you pick (2D section values: real wings lose some lift at the tips).</p>
+    <div class="panel">
+      <div class="controls">
+        <div><label for="cSpeed">Speed: <output id="cSpeedOut"></output></label><input id="cSpeed" type="range" min="10" max="120" step="1" value="51"></div>
+        <div><label for="cAlpha">Angle of attack: <output id="cAlphaOut"></output></label><input id="cAlpha" type="range" min="0" max="18" step="0.5" value="8"></div>
+        <div><label for="cChord">Chord (m)</label><input id="cChord" type="number" min="0.05" max="10" step="0.05" value="1.0"></div>
+        <div><label for="cSpan">Span (m)</label><input id="cSpan" type="number" min="0.1" max="60" step="0.1" value="5"></div>
+        <div><label for="cAlt">Altitude</label>
+          <select id="cAlt" style="width:100%;background:var(--surface-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:500 0.95rem var(--sans)">
+            <option value="1.225,1.789e-5">Sea level</option><option value="1.056,1.749e-5">5,000 ft</option>
+            <option value="0.905,1.710e-5">10,000 ft</option><option value="0.653,1.632e-5">20,000 ft</option></select></div>
+      </div>
+      <div class="stats calc-out" id="calcOut"></div>
+      <p class="muted" style="font-size:0.85rem;margin:12px 0 0" id="calcNote"></p>
+    </div>
+  </section>
+
+  <!-- 8. Setup + validation -->
+  <section class="two-col">
+    <div class="panel">
+      <h2>Setup</h2>
+      <table>
+        <tr><td>Airfoil</td><td>NASA TMR NACA 0012 (sharp trailing edge), chord 1 m, 2D</td></tr>
+        <tr><td>Flow</td><td>Re = 6 × 10⁶, M = 0.15 run incompressible (51.04 m/s)</td></tr>
+        <tr><td>Mesh</td><td>Structured C-mesh written by my own Python script, 630 × 179 = 112,770 cells, farfield 500 chords</td></tr>
+        <tr><td>Wall</td><td>First cell 2 µm, y<sup>+</sup> ≤ 1.05 at every angle (boundary layer resolved, no wall functions)</td></tr>
+        <tr><td>Solver</td><td>simpleFoam (steady RANS), k-ω SST, SIMPLEC, second-order upwind</td></tr>
+        <tr><td>Angle</td><td>Set by tilting the free stream, not the mesh (same mesh for every angle)</td></tr>
+        <tr><td>Run</td><td>6000 iterations per angle, forces averaged over the last 500; 7–13 min on 4 cores</td></tr>
+      </table>
+    </div>
+    <div class="panel">
+      <h2>Validation</h2>
+      <table id="valTable"></table>
+      <p class="muted" style="font-size:0.85rem;margin:12px 0 0">References: Ladson, NASA TM 4074 (1988); Gregory &amp; O'Reilly, ARC R&amp;M 3726 (1970);
+        NASA Langley Turbulence Modeling Resource, case 2DN00 (CFL3D SST).</p>
+    </div>
+  </section>
+
+  <!-- 9. What I learned -->
+  <section style="padding-top:0" id="learned">
+    <h2>What I learned</h2>
+    <div class="two-col">
+      <div class="panel">
+        <h3>Steady RANS doesn't stall</h3>
+        <p class="muted" style="margin:0">At 18° the experiment has stalled (C<sub>l</sub> drops from 1.61 to 1.00), but my simulation keeps
+          climbing to 1.60. The skin friction shows only a small reversed-flow patch at the trailing edge. This is a known limitation of
+          steady SST: it keeps the flow attached too long. NASA's case stops at 15° for this reason. Drag is also 9–17 % high from 12° up,
+          as NASA's own SST result is.</p>
+      </div>
+      <div class="panel">
+        <h3>Meshing thin cells</h3>
+        <p class="muted" style="margin:0">My first meshes (blockMesh) all diverged. Cells near the wall are 2 µm tall and up to 1000× longer than
+          that, and OpenFOAM only tolerates that shape if the cells are exact rectangles. A few percent of taper made them read as 85° skewed.
+          I wrote my own mesh generator that keeps every wake cell rectangular, and it ran first time.</p>
+      </div>
+      <div class="panel">
+        <h3>Don't stop on residuals alone</h3>
+        <p class="muted" style="margin:0">My first runs at 4°, 8° and 10° stopped early because the residuals met their targets, while lift was
+          still creeping up. I removed the early stop and judge every run on its force history instead. The redone runs changed by
+          less than 0.6 %, but the rule is now safer.</p>
+      </div>
+      <div class="panel">
+        <h3>Next</h3>
+        <ul class="clean" style="margin:0">
+          <li>Finish the mesh study (fine runs in progress)</li>
+          <li>Transient run at 18° to see if unsteady RANS stalls</li>
+          <li>Spalart–Allmaras model for comparison at high angles</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <p class="muted" style="font-size:0.85rem">Data: <a href="data/airfoil-data.json">airfoil-data.json</a> (all coefficients, surface
+      distributions and histories) · flow fields sampled on 5 mm and 0.75 mm grids from the final iteration of each run.</p>
+    <a class="back" href="../../index.html#projects">← All projects</a>
+  </section>
+</main>
+
+<footer><div class="wrap">© Jack Crooks · Hosted on GitHub Pages</div></footer>
+
+<script type="module" src="airfoil.js"></script>
+</body>
+</html>

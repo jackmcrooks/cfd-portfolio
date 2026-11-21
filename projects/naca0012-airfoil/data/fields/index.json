@@ -1,0 +1,98 @@
+{
+ "ranges": {
+  "ux": [
+   -1.5,
+   4.0
+  ],
+  "uy": [
+   -3.0,
+   3.0
+  ],
+  "cp": [
+   -14.0,
+   1.05
+  ]
+ },
+ "views": {
+  "full": {
+   "x": [
+    -0.45,
+    1.85
+   ],
+   "y": [
+    -0.55,
+    0.55
+   ],
+   "n": [
+    460,
+    220
+   ]
+  },
+  "le": {
+   "x": [
+    -0.04,
+    0.16
+   ],
+   "y": [
+    -0.06,
+    0.06
+   ],
+   "n": [
+    268,
+    161
+   ]
+  }
+ },
+ "angles": [
+  {
+   "alpha": 0.0,
+   "run": "run01_sst_aoa00",
+   "iteration": 6000.0
+  },
+  {
+   "alpha": 4.0,
+   "run": "run11_sst_aoa04_full",
+   "iteration": 6000.0
+  },
+  {
+   "alpha": 8.0,
+   "run": "run12_sst_aoa08_full",
+   "iteration": 6000.0
+  },
+  {
+   "alpha": 10.0,
+   "run": "run13_sst_aoa10_full",
+   "iteration": 6000.0
+  },
+  {
+   "alpha": 12.0,
+   "run": "run05_sst_aoa12",
+   "iteration": 6000.0
+  },
+  {
+   "alpha": 14.0,
+   "run": "run06_sst_aoa14",
+   "iteration": 6000.0
+  },
+  {
+   "alpha": 15.0,
+   "run": "run07_sst_aoa15",
+   "iteration": 6000.0
+  },
+  {
+   "alpha": 16.0,
+   "run": "run08_sst_aoa16",
+   "iteration": 6000.0
+  },
+  {
+   "alpha": 17.0,
+   "run": "run09_sst_aoa17",
+   "iteration": 6000.0
+  },
+  {
+   "alpha": 18.0,
+   "run": "run10_sst_aoa18",
+   "iteration": 6000.0
+  }
+ ]
+}
