@@ -92,8 +92,9 @@
   <!-- 3. Flow explorer -->
   <section style="padding-top:0" id="explore">
     <h2>Flow explorer</h2>
-    <p class="muted" style="font-size:0.9rem;margin-top:-4px">The velocity and pressure fields from each run, drawn in your browser.
-      Drag the slider to change the angle of attack, click anywhere to trace a streamline from that point, and hover for values.</p>
+    <p class="muted" style="font-size:0.9rem;margin-top:-4px">The velocity and pressure fields from each run, drawn in your browser as in a
+      wind tunnel: the air always comes from the left and the airfoil pitches up about its quarter chord. Drag the slider (or press Sweep)
+      to change the angle of attack, click anywhere to trace a streamline from that point, and hover for values.</p>
 
     <div class="panel">
       <div class="angle-pick">
@@ -110,6 +111,7 @@
         <label class="check"><input type="checkbox" id="optStream" checked> Streamlines</label>
         <label class="check"><input type="checkbox" id="optAnim" checked> Animate</label>
         <label class="check"><input type="checkbox" id="optMesh"> Show mesh</label>
+        <button class="btn" id="sweep">▶ Sweep angles</button>
         <button class="btn" id="clearSeeds">Clear my streamlines</button>
       </div>
 
@@ -117,7 +119,7 @@
         <canvas id="flow"></canvas>
         <div class="readout" id="readout">hover the flow</div>
         <div class="loading" id="flowLoading">loading…</div>
-        <div class="hint">click: add a streamline · flow comes from the left at the angle of attack</div>
+        <div class="hint">click: add a streamline · wind from the left, airfoil pitches about ¼ chord</div>
       </div>
       <div class="cbar"><span id="cbLo"></span><canvas id="cbar" width="360" height="10"></canvas><span id="cbHi"></span><span id="cbName" class="muted"></span></div>
 
@@ -185,10 +187,10 @@
   <section style="padding-top:0" id="calc">
     <h2>Put it on a wing</h2>
     <p class="muted" style="font-size:0.9rem;margin-top:-4px">Lift and drag of a straight wing section with this airfoil, using the CFD
-      coefficients at the angle you pick (2D section values: real wings lose some lift at the tips).</p>
+      coefficients at the angle you pick (2D section values: real wings lose some lift at the tips). The starting values (88 m/s, 1 m chord, sea level) give the simulated Reynolds number of 6 million.</p>
     <div class="panel">
       <div class="controls">
-        <div><label for="cSpeed">Speed: <output id="cSpeedOut"></output></label><input id="cSpeed" type="range" min="10" max="120" step="1" value="51"></div>
+        <div><label for="cSpeed">Speed: <output id="cSpeedOut"></output></label><input id="cSpeed" type="range" min="10" max="120" step="1" value="88"></div>
         <div><label for="cAlpha">Angle of attack: <output id="cAlphaOut"></output></label><input id="cAlpha" type="range" min="0" max="18" step="0.5" value="8"></div>
         <div><label for="cChord">Chord (m)</label><input id="cChord" type="number" min="0.05" max="10" step="0.05" value="1.0"></div>
         <div><label for="cSpan">Span (m)</label><input id="cSpan" type="number" min="0.1" max="60" step="0.1" value="5"></div>
@@ -267,6 +269,6 @@
 
 <footer><div class="wrap">© Jack Crooks · Hosted on GitHub Pages</div></footer>
 
-<script type="module" src="airfoil.js"></script>
+<script type="module" src="airfoil.js?v=3"></script>
 </body>
 </html>

@@ -56,7 +56,8 @@ function ladsonAt(a, col) {
 //  SVG chart with hover tooltip (nearest point) and optional click
 // =============================================================
 function chart(el, o) {
-  const W = o.w || 760, H = o.h || 360, P = { l: o.w ? 54 : 60, r: 14, t: 14, b: 44 };
+  // drawing width follows the real width (between 360 and 760 px) so labels stay readable on phones
+  const W = Math.round(Math.max(360, Math.min(o.w || 760, el.clientWidth || 760))), H = Math.round((o.h || 360) * (W < 560 ? 0.85 : 1)), P = { l: 54, r: 14, t: 14, b: 44 };
   const pts = o.series.filter((s) => !s.hidden).flatMap((s) => s.pts);
   let [x0, x1] = o.x.range || [Math.min(...pts.map((p) => p[0])), Math.max(...pts.map((p) => p[0]))];
   let [y0, y1] = o.y.range || [Math.min(...pts.map((p) => p[1])), Math.max(...pts.map((p) => p[1]))];
@@ -147,7 +148,7 @@ async function loadField(alpha, view) {
   const key = `${alpha}_${view}`;
   if (!fieldCache[key]) {
     fieldCache[key] = (async () => {
-      const v = FI.views[view], [nx, ny] = v.n;
+      const [nx, ny] = FI.views[view].n, v = FI.angles.find((a) => a.alpha === alpha).boxes[view];
       const buf = await (await fetch(`data/fields/aoa${String(Math.round(alpha)).padStart(2, "0")}_${view}.bin`)).arrayBuffer();
       const q = new Uint16Array(buf), n = nx * ny;
       const dec = (k, name) => { const [lo, hi] = FI.ranges[name], out = new Float32Array(n);
@@ -172,7 +173,12 @@ async function loadMesh() {
 function explorer() {
   const cv = $("flow"), ctx = cv.getContext("2d"), wrap = $("flowWrap");
   let F = null, lines = [], seeds = [], fieldImg = null, meshImg = null, anim = 0, phase = 0;
-  const view = () => FI.views[state.view];
+  const view = () => F || FI.views[state.view];   // the sampling window of the field on screen
+  // wind frame: the data is rotated so the free stream is horizontal and the airfoil pitches nose-up
+  // by alpha about the quarter chord. Airfoil outline and mesh (body coordinates) are rotated to match.
+  const rot = () => { const a = (D.runs[state.i].alpha * Math.PI) / 180; return [Math.cos(a), Math.sin(a), FI.pivot[0]]; };
+  const toWind = (x, y) => { const [c, s, p] = rot(), dx = x - p; return [p + dx * c + y * s, -dx * s + y * c]; };
+  const toBody = (x, y) => { const [c, s, p] = rot(), dx = x - p; return [p + dx * c - y * s, dx * s + y * c]; };
 
   function size() {
     const v = view(), w = wrap.clientWidth, ar = (v.y[1] - v.y[0]) / (v.x[1] - v.x[0]);
@@ -243,7 +249,7 @@ function explorer() {
     meshImg = document.createElement("canvas"); meshImg.width = cv.width; meshImg.height = cv.height;
     const g = meshImg.getContext("2d"), step = state.view === "full" ? 2 : 1;
     g.strokeStyle = "rgba(255,255,255,0.28)"; g.lineWidth = 0.6;
-    const P = (i, j) => { const o = (i * M.nj + j) * 2; return toPx(M.p[o], M.p[o + 1]); };
+    const P = (i, j) => { const o = (i * M.nj + j) * 2; return toPx(...toWind(M.p[o], M.p[o + 1])); };
     for (let i = 0; i < M.ni; i += step) { g.beginPath(); for (let j = 0; j < M.nj; j++) { const [a, b] = P(i, j); j ? g.lineTo(a, b) : g.moveTo(a, b); } g.stroke(); }
     for (let j = 0; j < M.nj; j += step) { g.beginPath(); for (let i = 0; i < M.ni; i++) { const [a, b] = P(i, j); i ? g.lineTo(a, b) : g.moveTo(a, b); } g.stroke(); }
   }
@@ -271,16 +277,25 @@ function explorer() {
         }
       });
     }
+    const fs = Math.max(11, cv.width / 70), alpha = D.runs[state.i].alpha;
+    if (state.view === "full") {            // horizontal reference through the pivot + chord line, to read alpha
+      const [x0, y0] = toPx(view().x[0], 0), [x1] = toPx(view().x[1], 0), [te0, te1] = toPx(...toWind(1.35, 0));
+      ctx.setLineDash([6, 6]); ctx.lineWidth = 1.2; ctx.strokeStyle = "rgba(255,255,255,0.35)";
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y0); ctx.stroke();
+      ctx.strokeStyle = "rgba(255,255,255,0.7)";
+      ctx.beginPath(); ctx.moveTo(...toPx(...toWind(-0.1, 0))); ctx.lineTo(te0, te1); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = C.text; ctx.font = `600 ${fs * 1.15}px Inter, sans-serif`;
+      ctx.fillText(`α = ${alpha}°`, te0 + 8, (te1 + y0) / 2 + fs * 0.4);
+    }
     ctx.fillStyle = "#1a2133"; ctx.strokeStyle = "#d9dee8"; ctx.lineWidth = Math.max(1.2, cv.width / 700);
-    ctx.beginPath(); OUTLINE.forEach((p, k) => { const [a, b] = toPx(p[0], p[1]); k ? ctx.lineTo(a, b) : ctx.moveTo(a, b); });
+    ctx.beginPath(); OUTLINE.forEach((p, k) => { const [a, b] = toPx(...toWind(p[0], p[1])); k ? ctx.lineTo(a, b) : ctx.moveTo(a, b); });
     ctx.closePath(); ctx.fill(); ctx.stroke();
-    // free-stream arrow
-    const a = D.runs[state.i].alpha * Math.PI / 180, [ax, ay] = [cv.width * 0.06, cv.height * 0.14], L = cv.width * 0.06;
+    // free-stream arrow (always horizontal in the wind frame)
+    const [ax, ay] = [cv.width * 0.07, cv.height * 0.12], L = cv.width * 0.06;
     ctx.strokeStyle = C.text; ctx.fillStyle = C.text; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(ax - L * Math.cos(a), ay + L * Math.sin(a)); ctx.lineTo(ax, ay); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(ax, ay);
-    ctx.lineTo(ax - 9 * Math.cos(a - 0.4), ay + 9 * Math.sin(a - 0.4)); ctx.lineTo(ax - 9 * Math.cos(a + 0.4), ay + 9 * Math.sin(a + 0.4)); ctx.fill();
-    ctx.font = `${Math.max(11, cv.width / 70)}px Inter, sans-serif`; ctx.fillText("U∞", ax + 6, ay + 4);
+    ctx.beginPath(); ctx.moveTo(ax - L, ay); ctx.lineTo(ax, ay); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax - 9, ay - 4); ctx.lineTo(ax - 9, ay + 4); ctx.fill();
+    ctx.font = `${fs}px Inter, sans-serif`; ctx.fillText("U∞", ax + 6, ay + 4);
   }
   function loop() {
     phase += 0.0025 * (view().x[1] - view().x[0]);
@@ -299,9 +314,9 @@ function explorer() {
   cv.addEventListener("mousemove", (ev) => {
     if (!F) return;
     const r = cv.getBoundingClientRect(), [x, y] = toXY(((ev.clientX - r.left) / r.width) * cv.width, ((ev.clientY - r.top) / r.height) * cv.height);
-    const s = sample(F.speed, x, y), cp = sample(F.cp, x, y);
-    $("readout").textContent = Number.isNaN(s) ? `x/c ${x.toFixed(3)}  y/c ${y.toFixed(3)}\n(inside the airfoil)`
-      : `x/c ${x.toFixed(3)}  y/c ${y.toFixed(3)}\nU/U∞ ${s.toFixed(3)}   Cp ${cp.toFixed(3)}`;
+    const s = sample(F.speed, x, y), cp = sample(F.cp, x, y), [bx, by] = toBody(x, y);   // position along the chord
+    $("readout").textContent = Number.isNaN(s) ? `x/c ${bx.toFixed(3)}  y/c ${by.toFixed(3)}\n(inside the airfoil)`
+      : `x/c ${bx.toFixed(3)}  y/c ${by.toFixed(3)}\nU/U∞ ${s.toFixed(3)}   Cp ${cp.toFixed(3)}`;
   });
   cv.addEventListener("click", (ev) => {
     const r = cv.getBoundingClientRect(), [x, y] = toXY(((ev.clientX - r.left) / r.width) * cv.width, ((ev.clientY - r.top) / r.height) * cv.height);
@@ -309,6 +324,14 @@ function explorer() {
     seeds.push({ x, y, view: state.view }); buildLines(); if (!anim) draw();
   });
   $("clearSeeds").addEventListener("click", () => { seeds = []; buildLines(); if (!anim) draw(); });
+  let sweep = 0;                           // step through all angles to watch the airfoil pitch up
+  $("sweep").addEventListener("click", () => {
+    if (sweep) { clearInterval(sweep); sweep = 0; $("sweep").textContent = "▶ Sweep angles"; return; }
+    D.runs.forEach((r) => loadField(r.alpha, state.view));          // fetch every angle up front
+    $("sweep").textContent = "❚❚ Stop";
+    const step = () => setAngle((state.i + 1) % D.runs.length);
+    step(); sweep = setInterval(step, 1300);
+  });
   ["optStream", "optAnim", "optMesh"].forEach((id) => $(id).addEventListener("change", () => refresh(id === "optStream")));
   tabs("viewSeg", "view", () => refresh());
   tabs("colSeg", "colour", () => refresh(false));
@@ -478,6 +501,9 @@ async function main() {
   tabs("gridTabs", "gridTab", grid);
   onAngle(strip); onAngle(polar); onAngle(surface); onAngle(convergence);
   explorer(); calc(); grid(); valTable();
+  let rz = 0, lastW = window.innerWidth;
+  window.addEventListener("resize", () => { if (window.innerWidth === lastW) return; lastW = window.innerWidth;
+    clearTimeout(rz); rz = setTimeout(() => { polar(); surface(); convergence(); grid(); }, 150); });
   setAngle(state.i);
 }
 main().catch((e) => { console.error(e); $("flowLoading").textContent = "Could not load the data (open this page through a web server, not as a file)."; });
