@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project Title · Jack Crooks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <script type="importmap">
+    { "imports": {
+        "three": "../../assets/vendor/three/build/three.module.min.js",
+        "three/addons/": "../../assets/vendor/three/addons/" } }
+  </script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../../index.html">JACK CROOKS <span>/ CFD</span></a>
+    <nav class="nav"><a href="../../index.html#projects">All projects</a></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- ===== PROJECT TEMPLATE =====
+       1. Copy this whole _template folder and rename it (e.g. projects/cooling-tower)
+       2. Put your ParaView export in models/ and change data-model below
+       3. Edit the text, then add a card for it on the home page (index.html)  -->
+  <section style="padding-top:48px">
+    <div class="eyebrow">OpenFOAM · Category</div>
+    <h1 style="font-size:2.6rem">Project Title</h1>
+    <p class="lede">One or two sentences: what you modelled, why, and the headline result.</p>
+    <span class="status planned">Planned</span>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="viewer" data-model="models/model.glb" data-up="z" data-flow="+x"
+         data-missing="Put your model at <code>models/model.glb</code>"></div>
+  </section>
+
+  <section>
+    <h2>Key results</h2>
+    <div class="stats">
+      <div class="stat"><div class="label">Result 1</div><div class="value">0.00</div><div class="note">note</div></div>
+      <div class="stat"><div class="label">Result 2</div><div class="value">0<span class="unit">N</span></div><div class="note">note</div></div>
+    </div>
+  </section>
+
+  <section class="two-col">
+    <div class="panel">
+      <h2>Case setup</h2>
+      <table>
+        <tr><td>Solver</td><td>…</td></tr>
+        <tr><td>Turbulence</td><td>…</td></tr>
+        <tr><td>Mesh</td><td>…</td></tr>
+        <tr><td>Boundary conditions</td><td>…</td></tr>
+      </table>
+    </div>
+    <div class="panel">
+      <h2>What I learned</h2>
+      <ul class="clean"><li>…</li></ul>
+    </div>
+  </section>
+
+  <section>
+    <a class="back" href="../../index.html#projects">← All projects</a>
+  </section>
+</main>
+
+<footer><div class="wrap">© Jack Crooks · Built with three.js · Hosted on GitHub Pages</div></footer>
+
+<script type="module" src="../../assets/js/viewer.js"></script>
+</body>
+</html>

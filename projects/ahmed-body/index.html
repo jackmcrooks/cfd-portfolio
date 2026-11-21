@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ahmed Body Validation · Jack Crooks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <script type="importmap">
+    { "imports": {
+        "three": "../../assets/vendor/three/build/three.module.min.js",
+        "three/addons/": "../../assets/vendor/three/addons/" } }
+  </script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../../index.html">JACK CROOKS <span>/ CFD</span></a>
+    <nav class="nav"><a href="../../index.html#projects">All projects</a></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section style="padding-top:48px">
+    <div class="eyebrow">OpenFOAM · Validation case</div>
+    <h1 style="font-size:2.6rem">Ahmed Body Validation</h1>
+    <p class="lede">The Ahmed body is the standard test shape for automotive CFD: a simplified car with a rounded nose and a slanted rear.
+      Its wake is very sensitive to the slant angle, which makes it a tough check on turbulence modelling.
+      I'm using it to validate my OpenFOAM workflow before trusting it on real vehicles.</p>
+    <span class="status wip">In progress</span>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="viewer" data-model="models/ahmed-body.glb" data-up="z" data-flow="+x"></div>
+    <p class="muted" style="font-size:0.85rem;margin-top:8px">Geometry: 25° slant, standard dimensions. Replace with a pressure-coloured surface from ParaView once results are in.</p>
+  </section>
+
+  <section class="two-col">
+    <div class="panel">
+      <h2>Geometry</h2>
+      <table>
+        <tr><td>Length</td><td>1044 mm</td></tr>
+        <tr><td>Width</td><td>389 mm</td></tr>
+        <tr><td>Height</td><td>288 mm</td></tr>
+        <tr><td>Nose radius</td><td>100 mm</td></tr>
+        <tr><td>Slant length</td><td>222 mm</td></tr>
+        <tr><td>Slant angle</td><td>25° (this case)</td></tr>
+        <tr><td>Ground clearance</td><td>50 mm, on four 30 mm stilts</td></tr>
+        <tr><td>Flow speed</td><td>40 m/s → Re<sub>L</sub> ≈ 2.8 × 10⁶</td></tr>
+      </table>
+    </div>
+    <div class="panel">
+      <h2>Validation plan</h2>
+      <table>
+        <tr><th>Quantity</th><th>Experiment</th><th>My CFD</th><th>Error</th></tr>
+        <tr><td>Drag coefficient C<sub>d</sub></td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>Slant-surface pressure</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>Wake velocity profiles</td><td>—</td><td>—</td><td>—</td></tr>
+      </table>
+      <p class="muted" style="font-size:0.85rem;margin:12px 0 0">Reference: Ahmed, Ramm &amp; Faltin (1984), SAE 840300, plus the ERCOFTAC wake measurements.</p>
+    </div>
+  </section>
+
+  <section>
+    <a class="back" href="../../index.html#projects">← All projects</a>
+  </section>
+</main>
+
+<footer><div class="wrap">© Jack Crooks · Built with three.js · Hosted on GitHub Pages</div></footer>
+
+<script type="module" src="../../assets/js/viewer.js"></script>
+</body>
+</html>

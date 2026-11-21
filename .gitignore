@@ -1,0 +1,21 @@
+# ---- OpenFOAM results: too big for GitHub, keep only the case setup ----
+# Numbered time folders (results), except the 0 folder (initial conditions)
+[1-9]*/
+0.[0-9]*/
+processor*/
+postProcessing/
+constant/polyMesh/
+constant/extendedFeatureEdgeMesh/
+*.foam
+log.*
+*.OpenFOAM
+
+# ---- ANSYS ----
+*.dat.h5
+*.cas.h5
+*.dat
+*.cas
+*_files/
+
+# ---- Mac ----
+.DS_Store

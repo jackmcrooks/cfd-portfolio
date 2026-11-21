@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jack Crooks, PE · CFD Portfolio</title>
+  <meta name="description" content="Computational fluid dynamics projects in OpenFOAM and ANSYS Fluent by Jack Crooks, PE.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script type="importmap">
+    { "imports": {
+        "three": "./assets/vendor/three/build/three.module.min.js",
+        "three/addons/": "./assets/vendor/three/addons/" } }
+  </script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="index.html">JACK CROOKS <span>/ CFD</span></a>
+    <nav class="nav">
+      <a href="#projects">Projects</a>
+      <a href="#about">About</a>
+      <a href="https://github.com/YOUR-GITHUB-USERNAME">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <canvas class="streaks" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="eyebrow">Computational Fluid Dynamics Portfolio</div>
+    <h1>Jack Crooks, PE<br>Mechanical Engineer</h1>
+    <p class="lede">I build and validate CFD models of external aerodynamics and thermal-fluid systems.
+      Every project here has an interactive 3D model you can spin around, plus the setup, numbers and lessons learned.</p>
+    <div class="chips">
+      <span class="chip">OpenFOAM</span><span class="chip">ANSYS Fluent</span><span class="chip">ParaView</span>
+      <span class="chip">k-ω SST</span><span class="chip">snappyHexMesh</span><span class="chip">MATLAB</span>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <section id="projects">
+    <h2>Projects</h2>
+    <div class="grid">
+
+      <a class="card" href="projects/nascar-truck/index.html">
+        <div class="thumb">
+          <div class="viewer" data-mini="true" data-model="projects/nascar-truck/models/truck.glb" data-up="z" data-flow="none"
+               data-missing="NASCAR truck model<br><span class='muted'>3D preview coming soon</span>"></div>
+        </div>
+        <div class="body">
+          <span class="status wip">In progress</span>
+          <h3 style="margin-top:10px">NASCAR Truck External Aero</h3>
+          <p>Half-model of a 2022 Ford F-150 NASCAR truck in OpenFOAM (simpleFoam, k-ω SST, ~1M cells). First run at 60 mph: C<sub>d</sub> ≈ 0.50.</p>
+          <span class="mono muted">OpenFOAM · snappyHexMesh · simpleFoam</span>
+        </div>
+      </a>
+
+      <a class="card" href="projects/ahmed-body/index.html">
+        <div class="thumb">
+          <div class="viewer" data-mini="true" data-model="projects/ahmed-body/models/ahmed-body.glb" data-up="z" data-flow="none"></div>
+        </div>
+        <div class="body">
+          <span class="status wip">In progress</span>
+          <h3 style="margin-top:10px">Ahmed Body Validation</h3>
+          <p>The classic automotive CFD benchmark, used to check my OpenFOAM workflow against published wind-tunnel data before moving to real vehicles.</p>
+          <span class="mono muted">OpenFOAM · validation</span>
+        </div>
+      </a>
+
+      <!-- To add a project: copy one of the cards above, change the link, model path and text.
+           See docs/ADD-A-PROJECT.md -->
+
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="panel">
+      <h2>About</h2>
+      <p class="muted" style="margin:0 0 10px">Licensed Professional Engineer (NC) · MS & BS Mechanical Engineering, UNC Charlotte · Charlotte, NC</p>
+      <p style="color:var(--text-2);margin:0">I'm a mechanical engineer with a background in ANSYS Fluent for industrial flows, now building open-source CFD workflows in OpenFOAM.
+        This site holds my personal CFD projects: case setup, meshing, results, and validation.</p>
+      <p style="margin:14px 0 0">
+        <a href="https://www.linkedin.com/in/YOUR-LINKEDIN">LinkedIn</a> ·
+        <a href="https://github.com/YOUR-GITHUB-USERNAME">GitHub</a>
+      </p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">© Jack Crooks · Built with three.js · Hosted on GitHub Pages</div>
+</footer>
+
+<script type="module" src="assets/js/viewer.js"></script>
+<script type="module" src="assets/js/hero-flow.js"></script>
+</body>
+</html>

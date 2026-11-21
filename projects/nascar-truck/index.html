@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NASCAR Truck External Aero · Jack Crooks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <script type="importmap">
+    { "imports": {
+        "three": "../../assets/vendor/three/build/three.module.min.js",
+        "three/addons/": "../../assets/vendor/three/addons/" } }
+  </script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../../index.html">JACK CROOKS <span>/ CFD</span></a>
+    <nav class="nav"><a href="../../index.html#projects">All projects</a></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section style="padding-top:48px">
+    <div class="eyebrow">OpenFOAM · External aerodynamics</div>
+    <h1 style="font-size:2.6rem">NASCAR Truck External Aero</h1>
+    <p class="lede">A steady RANS model of a NASCAR truck (2022 Ford F-150 body), built from scratch in OpenFOAM
+      and refined step by step: simple body → wheels → moving ground → mesh study.</p>
+    <span class="status wip">In progress · first run complete</span>
+  </section>
+
+  <section style="padding-top:0">
+    <!-- Export your ParaView surface as truck.glb and put it in this project's models/ folder -->
+    <div class="viewer" data-model="models/truck.glb" data-up="z" data-flow="+x"
+         data-missing="<b>3D model coming soon</b><br><br>Export the truck surface from ParaView (<code>File → Export Scene → glTF</code>), save it as <code>models/truck.glb</code>, and it will appear here.<br><br><span class='muted'>You can also drag any .glb file onto this box to preview it.</span>"></div>
+  </section>
+
+  <section>
+    <h2>Key results <span class="muted" style="font-size:1rem;font-weight:400">· 60 mph, iteration 531</span></h2>
+    <div class="stats">
+      <div class="stat"><div class="label">Drag coefficient</div><div class="value">0.50</div><div class="note">mean, iterations 450–531 (0.49–0.52)</div></div>
+      <div class="stat"><div class="label">Drag force</div><div class="value">581<span class="unit">N</span></div><div class="note">≈ 131 lbf, full truck, at mean C<sub>d</sub> (597 N at iteration 531)</div></div>
+      <div class="stat"><div class="label">Lift coefficient</div><div class="value">−0.63</div><div class="note">downforce, still drifting</div></div>
+      <div class="stat"><div class="label">Pressure drag share</div><div class="value">~97<span class="unit">%</span></div><div class="note">viscous ≈ 9 N of 298 N (half model)</div></div>
+    </div>
+    <p class="note-box" style="margin-top:18px">Preliminary: the run is not fully converged (C<sub>d</sub> wanders ±3%), the ground and wheels are stationary,
+      and no mesh-independence study has been done yet. See next steps below.</p>
+  </section>
+
+  <section>
+    <h2>Try it: drag &amp; power vs speed</h2>
+    <p class="muted" style="margin-top:-6px">Starts with the simulated C<sub>d</sub> and frontal area. Change them or slide the speed. This assumes C<sub>d</sub> stays constant with speed (Reynolds-independent), which is reasonable for a bluff body like this.</p>
+    <div class="panel">
+      <div class="drag-calc" data-cd="0.503" data-area="2.667" data-speed="60" data-max="200"></div>
+    </div>
+  </section>
+
+  <section class="two-col">
+    <div class="panel">
+      <h2>Case setup</h2>
+      <table>
+        <tr><td>Solver</td><td>simpleFoam (steady, incompressible), SIMPLE</td></tr>
+        <tr><td>Turbulence</td><td>k-ω SST with wall functions</td></tr>
+        <tr><td>Mesh</td><td>snappyHexMesh, 988,973 cells, half model</td></tr>
+        <tr><td>Inlet</td><td>U = 26.82 m/s (60 mph), 1% intensity</td></tr>
+        <tr><td>Outlet</td><td>p = 0, inletOutlet for U, k, ω</td></tr>
+        <tr><td>Ground / tires</td><td>Stationary no-slip walls (for now)</td></tr>
+        <tr><td>Top / sides</td><td>Slip</td></tr>
+        <tr><td>Centre plane</td><td>Symmetry</td></tr>
+        <tr><td>Fluid</td><td>Air, ν = 1.5×10⁻⁵ m²/s, ρ = 1.205 kg/m³</td></tr>
+        <tr><td>Reference</td><td>A = 2.667 m² (full), L = 2.845 m (wheelbase)</td></tr>
+      </table>
+    </div>
+    <div class="panel">
+      <h2>What I learned</h2>
+      <ul class="clean">
+        <li><b>Start simple on the numerics.</b> SIMPLEC with U relaxation 0.9 diverged by iteration ~15, starting in the 40 mm gap between the front tire and wheel well. Plain SIMPLE (p 0.3, U 0.7) was stable.</li>
+        <li><b>First order, then second.</b> Upwind for the first 30 iterations, then linearUpwind on the live run, since OpenFOAM re-reads its settings while it runs.</li>
+        <li><b>potentialFoam initialization hurt.</b> It gave unphysical velocities on this mesh. A uniform 26.82 m/s start worked better.</li>
+        <li><b>Flow features match expectations:</b> stagnation on the nose, acceleration over the windshield–roof corner (~35–40 m/s), separation off the roof onto the bed, and a long wake behind the tailgate spoiler.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="panel">
+      <h2>Next steps</h2>
+      <ul class="clean">
+        <li>Run to convergence (C<sub>d</sub> varying &lt; 1% over 200 iterations)</li>
+        <li>Moving ground + rotating wheels</li>
+        <li>y+ sizing, prism layers, and a 3-level mesh-independence study</li>
+        <li>Speed sweep and yaw angles</li>
+      </ul>
+    </div>
+    <a class="back" href="../../index.html#projects">← All projects</a>
+  </section>
+</main>
+
+<footer><div class="wrap">© Jack Crooks · Built with three.js · Hosted on GitHub Pages</div></footer>
+
+<script type="module" src="../../assets/js/viewer.js"></script>
+<script type="module" src="../../assets/js/drag-calc.js"></script>
+</body>
+</html>
