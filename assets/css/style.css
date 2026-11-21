@@ -149,3 +149,34 @@ ul.clean { padding-left: 18px; color: var(--text-2); }
 ul.clean li { margin: 4px 0; }
 footer { border-top: 1px solid var(--line); padding: 28px 0 40px; color: var(--muted); font-size: 0.85rem; margin-top: 30px; }
 .back { display: inline-block; margin-top: 28px; font-size: 0.9rem; }
+
+/* ---------- interactive streamlines (streamlines.js) ---------- */
+.viewer .sl-status {
+  position: absolute; bottom: 10px; left: 14px; font-size: 0.8rem; color: var(--text-2); pointer-events: none;
+}
+.sl-panel {
+  margin-top: 12px; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  display: grid; gap: 14px;
+}
+.sl-row { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+.sl-presets button {
+  font: 500 0.8rem var(--sans); color: var(--text); cursor: pointer;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 11px;
+}
+.sl-presets button:hover { border-color: var(--accent-2); }
+.sl-presets { gap: 6px; }
+.sl-grid { display: grid; gap: 12px 20px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.sl-grid label { display: grid; gap: 4px; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.sl-grid output { font-family: var(--mono); color: var(--text-2); text-transform: none; letter-spacing: 0; float: right; }
+.sl-grid input[type="range"] { width: 100%; accent-color: var(--accent-2); }
+.sl-grid select {
+  font: 0.85rem var(--sans); color: var(--text); background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 8px; padding: 6px 8px;
+}
+.sl-check { font-size: 0.85rem; color: var(--text-2); display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.sl-check input { accent-color: var(--accent-2); }
+.sl-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+.sl-foot .legend { margin-top: 0; flex: 1 1 320px; }
+.sl-info { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); }
+.sl-lbl { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; width: 64px; }
+.sl-presets button[aria-pressed="true"] { border-color: var(--accent-2); color: var(--accent-2); }

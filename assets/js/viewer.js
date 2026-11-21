@@ -10,6 +10,9 @@
 //    data-flow     "+x" draws a flow-direction arrow along +x  (or "none")
 //    data-mini     "true" = small auto-spinning preview with no buttons
 //    data-missing  message shown if the model file isn't there yet
+//    data-zoom     >1 starts the camera further out (default 1)
+//    data-streamlines  velocity-grid .json -> adds the interactive streamline tool
+//                      (streamlines.js); data-controls = id of the div for its panel
 //
 //  Visitors can also drag a .glb file onto the viewer to look at it —
 //  handy for checking your ParaView export before you upload it.
@@ -50,6 +53,8 @@ export function initViewer(el) {
   scene.add(helpers);
   let model = null;
   let home = null;                      // saved camera view for "Reset"
+  const frameHooks = [];                // extra per-frame callbacks (streamline animation)
+  let slStarted = false;
 
   // ---- toolbar ----
   const state = { wire: false, spin: mini, helpers: true };
@@ -134,10 +139,19 @@ export function initViewer(el) {
 
     // camera: 3/4 front view
     controls.target.set(0, size.y * 0.4, 0);
-    camera.position.set(-L * 1.25, L * 0.65, L * 1.35);
+    const aspect = el.clientWidth / Math.max(1, el.clientHeight);
+    const zf = parseFloat(el.dataset.zoom || "1") * (aspect < 1 ? Math.min(1.8, 1 / Math.sqrt(aspect)) : 1);
+    camera.position.set(-L * 1.25 * zf, L * 0.65 * zf, L * 1.35 * zf);
     camera.near = L / 200; camera.far = L * 100; camera.updateProjectionMatrix();
     home = { pos: camera.position.clone(), target: controls.target.clone() };
     showMsg("");
+
+    // optional interactive streamlines (only for the page's own model, not dropped files)
+    if (el.dataset.streamlines && !slStarted) {
+      slStarted = true;
+      import("./streamlines.js").then((m) => m.attachStreamlines({
+        el, gltfScene, camera, controls, onFrame: (fn) => frameHooks.push(fn) }));
+    }
   }
 
   const loader = new GLTFLoader();
@@ -184,6 +198,8 @@ export function initViewer(el) {
   renderer.setAnimationLoop(() => {
     if (!visible) return;
     controls.update();
+    const t = performance.now() / 1000;
+    for (const fn of frameHooks) fn(t);
     renderer.render(scene, camera);
   });
 }

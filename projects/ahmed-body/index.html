@@ -63,6 +63,20 @@
   </section>
 
   <section style="padding-top:0">
+    <h2>Interactive streamlines</h2>
+    <p class="muted" style="font-size:0.9rem;margin-top:-4px">Streamlines traced live in your browser from the CFD velocity field.
+      Pick a preset or move the orange seed rake with the sliders; every change re-traces the lines.</p>
+    <div class="viewer" data-model="models/ahmed-cp.glb" data-up="z" data-flow="+x"
+         data-zoom="1.15" data-streamlines="models/ahmed-velocity.json" data-controls="sl-controls"></div>
+    <div id="sl-controls"></div>
+    <p class="muted" style="font-size:0.85rem;margin-top:8px">How it works: the final-iteration velocity field was sampled onto a
+      10 mm grid around the body and wake (530 k points, 3 MB) with ParaView. The browser integrates each line with
+      4th-order Runge&ndash;Kutta through that grid, so lines stop at the body and at the edge of the sampled box.
+      Colour is local speed |U|/U<sub>&infin;</sub>; with <em>Animate flow</em> on, the pulses travel at the local flow speed.
+      Coordinates: nose at x = 0, base at x = 1.044 m, ground at z = 0, symmetry plane y = 0.</p>
+  </section>
+
+  <section style="padding-top:0">
     <h2>The flow</h2>
     <figure style="margin-bottom:20px">
       <img src="images/midplane-velocity.png" alt="Velocity on the centre plane of the Ahmed body, showing the slow wake behind the slant and base" loading="lazy">

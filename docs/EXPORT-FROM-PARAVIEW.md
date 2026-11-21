@@ -55,3 +55,19 @@ Make them visible along with the body and export the scene. Everything visible g
 
 - **Plot Over Line** (for example along the roof centreline), then **File → Save Data → CSV**.
 - Put the CSV in the project folder. A chart can read it later; just ask Claude to add one.
+
+## 5. Interactive streamlines (velocity field for the browser)
+
+The Ahmed body page traces streamlines live in the browser. It needs the velocity field sampled on a
+regular grid, which a script makes with ParaView's Python (takes a few seconds):
+
+```bash
+cd ~/cfd/ahmedBody25/04_postprocessing/scripts
+/Applications/ParaView-6.2.1.app/Contents/bin/pvpython export_velocity_grid.py ../../03_runs/run01_baseline_25deg_40ms ~/cfd/cfd-portfolio/projects/ahmed-body/models
+```
+
+It writes `ahmed-velocity.bin` (int16 velocities) and `ahmed-velocity.json` (grid size and spacing).
+The box and spacing are set at the top of the script (10 mm spacing is about 3 MB).
+To use it on another page, add to the viewer div:
+`data-streamlines="models/<name>.json" data-controls="sl-controls"` plus an empty `<div id="sl-controls"></div>`
+under it. The presets (seed rakes) are in `assets/js/streamlines.js` or can be given with `data-presets`.
