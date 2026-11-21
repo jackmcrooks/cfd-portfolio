@@ -8,7 +8,8 @@
 //
 //  Used by viewer.js when the viewer div has
 //    data-streamlines="models/ahmed-velocity.json"   (grid header; .bin next to it)
-//    data-controls="id-of-an-empty-div"              (where the control panel goes)
+//    data-controls="id-of-an-empty-div"              (panel goes here on narrow screens;
+//                                                     on wide screens it floats inside the viewer)
 //  Optional: data-presets='[{...}]' (JSON list, see DEFAULT_PRESETS below)
 //
 //  Coordinates are the CFD ones (metres, z up). The field is a half model
@@ -280,6 +281,9 @@ export async function attachStreamlines(ctx) {
   const panel = document.createElement("div");
   panel.className = "sl-panel";
   panel.innerHTML = `
+    <div class="sl-head"><span>Streamline controls</span>
+      <button type="button" class="sl-toggle" aria-expanded="true" title="Hide / show the controls">Hide ›</button></div>
+    <div class="sl-body">
     <div class="sl-row sl-presets"><span class="sl-lbl">Presets</span>${presets.map((p, i) => `<button type="button" data-preset="${i}">${p.name}</button>`).join("")}</div>
     <div class="sl-row sl-presets"><span class="sl-lbl">View</span>${Object.entries(VIEWS).map(([k, v]) => `<button type="button" data-view="${k}">${v.label}</button>`).join("")}</div>
     <div class="sl-grid">
@@ -317,8 +321,37 @@ export async function attachStreamlines(ctx) {
     <div class="sl-foot">
       <div class="legend"><span>|U|/U<sub>∞</sub> 0</span><span class="bar"></span><span>${U_MAX_COLOUR}</span></div>
       <span class="sl-info"></span>
+    </div>
     </div>`;
-  (panelHost || el.parentNode).appendChild(panel);
+
+  // Wide screens: panel floats over the right side of the viewer, and the 3D view is
+  // shifted left so the model stays visible. Narrow screens: panel sits under the viewer.
+  const wide = window.matchMedia("(min-width: 900px)");
+  let collapsed = false;
+  function dock() {
+    const docked = wide.matches;
+    el.classList.toggle("sl-docked", docked);
+    panel.classList.toggle("docked", docked);
+    if (docked) el.appendChild(panel); else (panelHost || el.parentNode).appendChild(panel);
+  }
+  wide.addEventListener("change", dock);
+  dock();
+  const toggle = panel.querySelector(".sl-toggle");
+  toggle.addEventListener("click", () => {
+    collapsed = !collapsed;
+    panel.classList.toggle("collapsed", collapsed);
+    toggle.textContent = collapsed ? "‹ Controls" : "Hide ›";
+    toggle.setAttribute("aria-expanded", !collapsed);
+  });
+  let viewKey = "";
+  onFrame(() => {   // keep the model centred in the part of the viewer the panel doesn't cover
+    const w = el.clientWidth, h = el.clientHeight;
+    const off = panel.classList.contains("docked") && !collapsed ? Math.round((panel.offsetWidth + 12) / 2) : 0;
+    const key = `${w},${h},${off}`;
+    if (key === viewKey) return;
+    viewKey = key;
+    if (off) camera.setViewOffset(w, h, off, 0, w, h); else camera.clearViewOffset();
+  });
   const info = panel.querySelector(".sl-info");
   const fmt = { x: (v) => `${(+v).toFixed(3)} m`, y: (v) => `${(+v).toFixed(3)} m`, z: (v) => `${(+v).toFixed(3)} m`,
     len: (v) => `${(+v * 1000).toFixed(0)} mm`, n: (v) => `${v}`, radius: (v) => `${(+v).toFixed(1)} mm` };

@@ -180,3 +180,43 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 40px; color: var(--m
 .sl-info { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); }
 .sl-lbl { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; width: 64px; }
 .sl-presets button[aria-pressed="true"] { border-color: var(--accent-2); color: var(--accent-2); }
+
+/* streamline panel docked inside the viewer (wide screens) */
+.sl-head { display: none; }
+.sl-body { display: grid; gap: 14px; }
+.viewer.sl-docked { height: 660px; }
+.viewer.sl-docked .hint { right: auto; left: 14px; }
+.sl-panel.docked {
+  position: absolute; top: 12px; right: 12px; bottom: 12px; width: 330px; margin: 0;
+  padding: 0; gap: 0; display: flex; flex-direction: column;
+  background: rgba(13, 19, 36, 0.42); border-color: rgba(255, 255, 255, 0.10);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2); backdrop-filter: blur(10px) saturate(1.2);
+  transition: background 0.2s;
+  touch-action: auto;
+}
+.sl-panel.docked:hover { background: rgba(13, 19, 36, 0.62); }
+.sl-panel.docked .sl-head {
+  display: flex; justify-content: space-between; align-items: center; padding: 10px 14px;
+  font-size: 0.75rem; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.sl-toggle {
+  font: 500 0.75rem var(--sans); color: var(--text); cursor: pointer; text-transform: none; letter-spacing: 0;
+  background: rgba(23, 32, 54, 0.7); border: 1px solid var(--line); border-radius: 8px; padding: 4px 9px;
+}
+.sl-toggle:hover { border-color: var(--accent-2); }
+.sl-panel.docked .sl-body { overflow-y: auto; padding: 12px 14px 14px; display: grid; gap: 12px; align-content: start; }
+.sl-panel.docked .sl-grid { grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+.sl-panel.docked .sl-grid label { font-size: 0.68rem; }
+.sl-panel.docked .sl-grid output { float: none; display: block; font-size: 0.72rem; }
+.sl-panel.docked .sl-grid select { font-size: 0.8rem; padding: 5px 6px; background: rgba(23, 32, 54, 0.75); }
+.sl-panel.docked .sl-presets button { font-size: 0.74rem; padding: 4px 8px; background: rgba(23, 32, 54, 0.7); }
+.sl-panel.docked .sl-lbl { width: 100%; font-size: 0.68rem; }
+.sl-panel.docked .sl-row { gap: 6px 12px; }
+.sl-panel.docked .sl-check { font-size: 0.8rem; flex: 1 1 45%; }
+.sl-panel.docked .sl-foot { flex-direction: column; align-items: stretch; gap: 6px; }
+.sl-panel.docked .sl-foot .legend { flex: none; font-size: 0.72rem; }
+.sl-panel.docked .sl-foot .legend .bar { flex: 1 1 auto; }
+.sl-panel.docked.collapsed { bottom: auto; width: auto; }
+.sl-panel.docked.collapsed .sl-body { display: none; }
+.sl-panel.docked.collapsed .sl-head { border-bottom: 0; gap: 10px; }
