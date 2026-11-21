@@ -43,6 +43,13 @@
     .strip { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin-top: 14px; }
     .strip .stat { padding: 10px 14px; }
     .strip .stat .value { font-size: 1.25rem; }
+    .minis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .minis .mini { border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 8px 2px; }
+    .minis svg { display: block; width: 100%; height: auto; font-family: var(--sans); }
+    .mini-key { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.75rem; color: var(--text-2); }
+    .mini-key i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+    .mini-key i.sq { border-radius: 1px; }
+    @media (max-width: 600px) { .minis { grid-template-columns: 1fr; } }
     .delta { font: 0.75rem var(--mono); }
 
     /* charts */
@@ -95,7 +102,7 @@
   <section style="padding-top:0" id="explore">
     <h2>Flow explorer</h2>
     <p class="muted" style="font-size:0.9rem;margin-top:-4px">The velocity and pressure fields from each run, drawn in your browser as in a
-      wind tunnel: the air always comes from the left and the airfoil pitches up about its quarter chord. Drag the slider (or press Sweep)
+      wind tunnel: the air always comes from the left and the airfoil pitches up about its quarter chord. Drag the wing's tail, the slider, or press Sweep
       to change the angle of attack, click anywhere to trace a streamline from that point, and hover for values.</p>
 
     <div class="panel">
@@ -121,11 +128,12 @@
         <canvas id="flow"></canvas>
         <div class="readout" id="readout">hover the flow</div>
         <div class="loading" id="flowLoading">loading…</div>
-        <div class="hint">click: add a streamline · wind from the left, airfoil pitches about ¼ chord</div>
+        <div class="hint">drag the tail to pitch the wing · click: add a streamline</div>
       </div>
       <div class="cbar"><span id="cbLo"></span><canvas id="cbar" width="360" height="10"></canvas><span id="cbHi"></span><span id="cbName" class="muted"></span></div>
 
       <div class="strip" id="strip"></div>
+      <div class="minis" id="minis"></div>
     </div>
   </section>
 
@@ -271,6 +279,6 @@
 
 <footer><div class="wrap">© Jack Crooks · Hosted on GitHub Pages</div></footer>
 
-<script type="module" src="airfoil.js?v=5"></script>
+<script type="module" src="airfoil.js?v=7"></script>
 </body>
 </html>

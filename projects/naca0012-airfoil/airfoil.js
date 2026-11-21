@@ -173,6 +173,7 @@ async function loadMesh() {
 function explorer() {
   const cv = $("flow"), ctx = cv.getContext("2d"), wrap = $("flowWrap");
   let F = null, lines = [], seeds = [], fieldImg = null, meshImg = null, anim = 0, phase = 0;
+  let drag = null, hoverTE = false, dragTaught = false, justDragged = false;   // drag-the-wing state
   const view = () => F || FI.views[state.view];   // the sampling window of the field on screen
   // wind frame: the data is rotated so the free stream is horizontal and the airfoil pitches nose-up
   // by alpha about the quarter chord. Airfoil outline and mesh (body coordinates) are rotated to match.
@@ -288,6 +289,23 @@ function explorer() {
     ctx.fillStyle = "#1a2133"; ctx.strokeStyle = "#d9dee8"; ctx.lineWidth = Math.max(1.2, cv.width / 700);
     ctx.beginPath(); OUTLINE.forEach((p, k) => { const [a, b] = toPx(...toWind(p[0], p[1])); k ? ctx.lineTo(a, b) : ctx.moveTo(a, b); });
     ctx.closePath(); ctx.fill(); ctx.stroke();
+    if (state.view === "full") {            // grab handle on the trailing edge: drag it to pitch the wing
+      const p = FI.pivot[0], R = 1 - p, ga = drag ? drag.a : null;
+      if (ga != null) {                     // where the pointer is pulling (snaps to the nearest run on release of each step)
+        const g = (ga * Math.PI) / 180;
+        ctx.setLineDash([3, 5]); ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(...toPx(p, 0)); ctx.lineTo(...toPx(p + R * Math.cos(g), -R * Math.sin(g))); ctx.stroke(); ctx.setLineDash([]);
+      }
+      const [hx, hy] = toPx(...toWind(1, 0)), hr = Math.max(7, cv.width / 110);
+      ctx.beginPath(); ctx.arc(hx, hy, hr, 0, 7);
+      ctx.fillStyle = drag || hoverTE ? C.text : "rgba(230,235,245,0.75)"; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = "#0d1324"; ctx.stroke();
+      const [px0, py0] = toPx(p, 0); ctx.beginPath(); ctx.arc(px0, py0, hr * 0.45, 0, 7); ctx.fillStyle = "#d9dee8"; ctx.fill();
+      if (!dragTaught && !drag) {            // one-time label until someone drags it
+        ctx.font = `${fs}px Inter, sans-serif`; ctx.fillStyle = C.text;
+        ctx.fillText("drag me ↕", hx + hr + 6, hy - hr - 2);
+      }
+    }
     // free-stream arrow (always horizontal in the wind frame)
     const [ax, ay] = [cv.width * 0.07, cv.height * 0.12], L = cv.width * 0.06;
     ctx.strokeStyle = C.text; ctx.fillStyle = C.text; ctx.lineWidth = 2;
@@ -309,14 +327,37 @@ function explorer() {
     if ($("optAnim").checked) loop(); else draw();
   }
 
-  cv.addEventListener("mousemove", (ev) => {
+  // ---- drag the wing by its trailing edge: pointer angle about the pivot -> nearest solved angle
+  const evXY = (ev) => { const r = cv.getBoundingClientRect(); return toXY(((ev.clientX - r.left) / r.width) * cv.width, ((ev.clientY - r.top) / r.height) * cv.height); };
+  const nearTE = (x, y) => { if (state.view !== "full") return false; const [tx, ty] = toWind(1, 0); return Math.hypot(x - tx, y - ty) < 0.09; };
+  const pointerAlpha = (x, y) => Math.max(-2, Math.min(20, (Math.atan2(-y, Math.max(x - FI.pivot[0], 0.05)) * 180) / Math.PI));
+  cv.addEventListener("pointerdown", (ev) => {
     if (!F) return;
+    const [x, y] = evXY(ev);
+    if (!nearTE(x, y)) return;
+    drag = { a: pointerAlpha(x, y) }; dragTaught = true; cv.setPointerCapture(ev.pointerId); cv.style.cursor = "grabbing";
+    D.runs.forEach((r) => loadField(r.alpha, "full"));                // prefetch so the wing follows the pointer
+    ev.preventDefault();
+  });
+  cv.addEventListener("pointermove", (ev) => {
+    if (!drag) return;
+    const [x, y] = evXY(ev); drag.a = pointerAlpha(x, y);
+    let k = 0; D.runs.forEach((r, j) => { if (Math.abs(r.alpha - drag.a) < Math.abs(D.runs[k].alpha - drag.a)) k = j; });
+    if (k !== state.i) setAngle(k); else if (!anim) draw();
+  });
+  const endDrag = (ev) => { if (!drag) return; drag = null; justDragged = true; cv.style.cursor = ""; try { cv.releasePointerCapture(ev.pointerId); } catch (e) { /* already released */ } if (!anim) draw(); };
+  cv.addEventListener("pointerup", endDrag); cv.addEventListener("pointercancel", endDrag);
+
+  cv.addEventListener("mousemove", (ev) => {
+    if (!F || drag) return;
     const r = cv.getBoundingClientRect(), [x, y] = toXY(((ev.clientX - r.left) / r.width) * cv.width, ((ev.clientY - r.top) / r.height) * cv.height);
+    const h = nearTE(x, y); if (h !== hoverTE) { hoverTE = h; cv.style.cursor = h ? "grab" : ""; if (!anim) draw(); }
     const s = sample(F.speed, x, y), cp = sample(F.cp, x, y), [bx, by] = toBody(x, y);   // position along the chord
     $("readout").textContent = Number.isNaN(s) ? `x/c ${bx.toFixed(3)}  y/c ${by.toFixed(3)}\n(inside the airfoil)`
       : `x/c ${bx.toFixed(3)}  y/c ${by.toFixed(3)}\nU/U∞ ${s.toFixed(3)}   Cp ${cp.toFixed(3)}`;
   });
   cv.addEventListener("click", (ev) => {
+    if (justDragged) { justDragged = false; return; }       // the click that ends a drag is not a streamline seed
     const r = cv.getBoundingClientRect(), [x, y] = toXY(((ev.clientX - r.left) / r.width) * cv.width, ((ev.clientY - r.top) / r.height) * cv.height);
     if (Number.isNaN(sample(F.speed, x, y))) return;
     seeds.push({ x, y, view: state.view }); buildLines(); if (!anim) draw();
@@ -349,6 +390,40 @@ function strip() {
     + cell("Lift / drag", r.cd ? fmt(r.cl / r.cd, 1) : "–", "efficiency")
     + cell("Moment C<sub>m</sub>", fmt(r.cm, 4), "about ¼ chord")
     + cell("Run", r.run.slice(3, 5), r.run.slice(6));
+}
+
+// =============================================================
+//  "Where you are": lift curve and lift/drag vs angle, dot follows the slider; click a point to jump
+// =============================================================
+function minis() {
+  const lad = D.ladson.filter((p) => p[0] > -0.5 && p[0] < 19.5);
+  const one = (title, f, ref, d) => {
+    const W = 300, H = 140, P = { l: 36, r: 12, t: 26, b: 24 };
+    const ys = D.runs.map(f).concat(ref.map((p) => p[1])), y1 = Math.max(...ys) * 1.1, y0 = Math.min(0, ...ys) > -0.05 * y1 ? 0 : Math.min(...ys);   // tiny negatives at 0 deg (data scatter): start at 0
+    const X = (a) => P.l + (a / 19) * (W - P.l - P.r), Y = (v) => H - P.b - ((v - y0) / (y1 - y0)) * (H - P.t - P.b);
+    const r = D.runs[state.i], cur = f(r);
+    const grid = [y0, (y0 + y1) / 2].map((v) => `<line x1="${P.l}" x2="${W - P.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${C.line}"/>
+      <text x="${P.l - 5}" y="${Y(v) + 3}" text-anchor="end" fill="${C.muted}" font-size="9">${v.toFixed(d)}</text>`).join("");
+    const xt = [0, 6, 12, 18].map((a) => `<text x="${X(a)}" y="${H - 8}" text-anchor="middle" fill="${C.muted}" font-size="9">${a}°</text>`).join("");
+    const refs = ref.map((p) => `<rect x="${X(p[0]) - 2.5}" y="${Y(p[1]) - 2.5}" width="5" height="5" fill="${C.exp}" opacity="0.8"/>`).join("");
+    const path = D.runs.map((q, k) => `${k ? "L" : "M"}${X(q.alpha)},${Y(f(q))}`).join("");
+    const hits = D.runs.map((q, k) => `<circle cx="${X(q.alpha)}" cy="${Y(f(q))}" r="11" fill="transparent" style="cursor:pointer" data-k="${k}"><title>${q.alpha}°: ${f(q).toFixed(d)}</title></circle>`).join("");
+    const lx = X(r.alpha), ly = Y(cur), right = lx > W - 90;
+    return `<div class="mini"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}">
+      <text x="${P.l}" y="14" fill="${C.text2}" font-size="11" font-weight="600">${title}</text>
+      ${grid}${xt}
+      <line x1="${lx}" x2="${lx}" y1="${P.t}" y2="${H - P.b}" stroke="${C.muted}" stroke-dasharray="3 3"/>
+      ${refs}<path d="${path}" fill="none" stroke="${C.cfd}" stroke-width="2"/>
+      ${D.runs.map((q) => `<circle cx="${X(q.alpha)}" cy="${Y(f(q))}" r="2.5" fill="${C.cfd}"/>`).join("")}
+      <circle cx="${lx}" cy="${ly}" r="6.5" fill="${C.cfd}" stroke="${C.bg}" stroke-width="2"/>
+      <text x="${lx + (right ? -10 : 10)}" y="${ly - 8}" text-anchor="${right ? "end" : "start"}" fill="${C.text}" font-size="11" font-weight="600">${cur.toFixed(d)}</text>
+      ${hits}</svg></div>`;
+  };
+  $("minis").innerHTML =
+    one("Lift coefficient C<tspan baseline-shift='sub' font-size='8'>l</tspan>", (q) => q.cl, lad.map((p) => [p[0], p[1]]), 2)
+    + one("Lift / drag", (q) => q.cl / q.cd, lad.filter((p) => p[2]).map((p) => [p[0], p[1] / p[2]]), 0)
+    + `<div class="mini-key"><span><i style="background:${C.cfd}"></i>OpenFOAM SST</span><span><i class="sq" style="background:${C.exp}"></i>Ladson experiment</span><span class="muted">click a point to jump to that angle</span></div>`;
+  $("minis").querySelectorAll("[data-k]").forEach((c) => c.addEventListener("click", () => setAngle(+c.dataset.k)));
 }
 
 // =============================================================
@@ -498,7 +573,7 @@ async function main() {
   tabs("surfTabs", "surfTab", surface);
   tabs("convTabs", "convTab", convergence);
   tabs("gridTabs", "gridTab", grid);
-  onAngle(strip); onAngle(polar); onAngle(surface); onAngle(convergence);
+  onAngle(strip); onAngle(minis); onAngle(polar); onAngle(surface); onAngle(convergence);
   explorer(); calc(); grid(); valTable();
   let rz = 0, lastW = window.innerWidth;
   window.addEventListener("resize", () => { if (window.innerWidth === lastW) return; lastW = window.innerWidth;
