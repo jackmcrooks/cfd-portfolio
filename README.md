@@ -1,6 +1,6 @@
 # CFD Portfolio: Jack Crooks, PE
 
-**Live site → https://YOUR-GITHUB-USERNAME.github.io/cfd-portfolio/**
+**Live site → https://jackmcrooks.github.io/cfd-portfolio/**
 
 Computational fluid dynamics projects built in OpenFOAM, with interactive 3D results you can
 rotate and zoom in the browser.
