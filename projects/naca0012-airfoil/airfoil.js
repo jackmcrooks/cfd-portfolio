@@ -77,7 +77,7 @@ function chart(el, o) {
     <text x="${P.l - 8}" y="${Y(v) + 4}" fill="${C.muted}" font-size="11" text-anchor="end">${o.y.fmt ? o.y.fmt(v) : v}</text>`; });
   xt.forEach((v) => { s += `<text x="${X(v)}" y="${H - P.b + 18}" fill="${C.muted}" font-size="11" text-anchor="middle">${o.x.fmt ? o.x.fmt(v) : v}</text>`; });
   (o.hlines || []).forEach((h) => { s += `<line x1="${P.l}" x2="${W - P.r}" y1="${Y(h[0])}" y2="${Y(h[0])}" stroke="${h[1]}" stroke-dasharray="5 4" stroke-width="1.5"/>
-    <text x="${W - P.r - 4}" y="${Y(h[0]) - 6}" fill="${h[1]}" font-size="11" text-anchor="end">${h[2]}</text>`; });
+    <text x="${h[3] ? P.l + 6 : W - P.r - 4}" y="${Y(h[0]) + (h[3] ? 14 : -6)}" fill="${h[1]}" font-size="11" text-anchor="${h[3] ? "start" : "end"}">${h[2]}</text>`; });   // h[3]: label below the line, at the left
   s += `<text x="${(P.l + W - P.r) / 2}" y="${H - 6}" fill="${C.text2}" font-size="12" text-anchor="middle">${o.x.label}</text>
         <text transform="translate(14 ${(P.t + H - P.b) / 2}) rotate(-90)" fill="${C.text2}" font-size="12" text-anchor="middle">${o.y.label}</text>`;
   s += `<clipPath id="clip-${el.id}"><rect x="${P.l}" y="${P.t - 6}" width="${W - P.l - P.r}" height="${H - P.t - P.b + 12}"/></clipPath><g clip-path="url(#clip-${el.id})">`;
@@ -581,10 +581,14 @@ function grid() {
     series: [{ name: "OpenFOAM SST", kind: "line dots", color: C.cfd, pts: done.map((p) => [p.cells, p.cd]) }],
     x: { label: "cells", log: true, range: [20000, 640000], ticks: [28440, 112770, 450534], fmt: (v) => `${Math.round(v / 1000)}k` },
     y: { label: "Cd", range: a === "0" ? [0.0077, 0.0083] : [0.017, 0.0235], fmt: (v) => v.toFixed(4) },
-    hlines: a === "0" ? [[ref[0], C.nasa, "NASA SST / Ladson 0.00809"]] : [[ref[0], C.nasa, "NASA SST 0.02219"], [ref[1], C.exp, "Ladson 0.01831"]],
+    hlines: a === "0" ? [[ref[0], C.nasa, "NASA SST / Ladson 0.00809"], [0.008063, C.text2, "extrapolated 0.00806", 1]]
+      : [[ref[0], C.nasa, "NASA SST 0.02219"], [ref[1], C.exp, "Ladson 0.01831"], [0.022346, C.text2, "extrapolated 0.02235", 1]],
     tipText: (p, se, k) => `${done[k].cells.toLocaleString()} cells · C<sub>d</sub> ${fmt(p[1], 5)} · ${done[k].run}` });
   $("gridNote").innerHTML = g.map((p) => `${(p.cells / 1000).toFixed(0)}k: ${p.cd != null ? fmt(p.cd, 5) : '<span class="pending">running</span>'}`).join(" · ")
-    + (a === "0" ? ". Fine value preliminary (still being extended to 12,000 iterations)." : ". Lift is the same on all meshes (1.494).");
+    + (a === "0" ? ". Richardson extrapolation: 0.00806, uncertainty (GCI) 0.5 %. The polar mesh (113k) is 1.5 % low."
+      : ". Richardson extrapolation: 0.0223, GCI 5 %; the polar mesh is 7 % low. Lift barely moves (1.494 → 1.489, GCI 0.1 %)."
+        + " Drag at high angle keeps rising as the mesh gets finer, toward NASA's SST value and away from the experiment:"
+        + " the extra drag at high angles is the SST model, not the mesh.");
 }
 
 // =============================================================

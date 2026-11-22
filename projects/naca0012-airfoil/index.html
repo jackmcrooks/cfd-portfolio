@@ -88,7 +88,7 @@
     <p class="lede">The NACA 0012 is the most-tested airfoil there is, and NASA publishes it as a reference case for turbulence models.
       I ran a full lift polar from 0° to 18° at a Reynolds number of 6 million and compared every angle with wind-tunnel data and
       NASA's own CFD. Everything on this page is live data from the runs. Pick an angle and explore the flow.</p>
-    <span class="status wip">Complete · mesh study in progress</span>
+    <span class="status done">Complete · mesh study done</span>
   </section>
 
   <!-- 2. Key numbers -->
@@ -191,7 +191,7 @@
         <p class="muted" style="font-size:0.82rem;margin:8px 0 0">Shaded: the last 500 iterations, averaged for the reported value.</p>
       </div>
       <div class="panel">
-        <h3>Mesh independence <span class="status wip" style="margin-left:6px">running</span></h3>
+        <h3>Mesh independence</h3>
         <p class="chart-sub">Drag on three meshes of the same family (each 2× finer per direction)</p>
         <div class="tabs" id="gridTabs"><button data-t="0" aria-pressed="true">α = 0°</button><button data-t="15">α = 15°</button></div>
         <div class="chart" id="gridChart"></div>
@@ -269,7 +269,6 @@
       <div class="panel">
         <h3>Next</h3>
         <ul class="clean" style="margin:0">
-          <li>Finish the mesh study (fine runs in progress)</li>
           <li>Transient run at 18° to see if unsteady RANS stalls</li>
           <li>Spalart–Allmaras model for comparison at high angles</li>
         </ul>
@@ -286,6 +285,6 @@
 
 <footer><div class="wrap">© Jack Crooks · Hosted on GitHub Pages</div></footer>
 
-<script type="module" src="airfoil.js?v=14"></script>
+<script type="module" src="airfoil.js?v=17"></script>
 </body>
 </html>
