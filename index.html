@@ -46,6 +46,32 @@
     <h2>Projects</h2>
     <div class="grid">
 
+      <a class="card" href="projects/cooling-tower-plume/index.html">
+        <div class="thumb">
+          <img src="projects/cooling-tower-plume/thumb.jpg" alt="Warm air rising through a hyperbolic natural-draft cooling tower" loading="lazy"
+               style="width:100%;height:100%;object-fit:cover;display:block">
+        </div>
+        <div class="body">
+          <span class="status wip">In progress</span>
+          <h3 style="margin-top:10px">Cooling Tower Plume Dispersion</h3>
+          <p>A 492 ft natural-draft cooling tower driven by buoyancy alone (buoyantSimpleFoam, k-ω SST, 1.16M cells). Phase 1: 97 % of design air flow, energy balance closes. Plume in a crosswind next.</p>
+          <span class="mono muted">OpenFOAM · buoyant flow · environmental</span>
+        </div>
+      </a>
+
+      <a class="card" href="projects/naca0012-airfoil/index.html">
+        <div class="thumb">
+          <img src="projects/naca0012-airfoil/thumb.jpg?v=3" alt="Streamlines coloured by speed around a NACA 0012 airfoil pitched to 15 degrees" loading="lazy"
+               style="width:100%;height:100%;object-fit:cover;display:block">
+        </div>
+        <div class="body">
+          <span class="status done">Complete</span>
+          <h3 style="margin-top:10px">NACA 0012 Airfoil Validation</h3>
+          <p>A full lift polar from 0° to 18° at Re = 6 million, checked against wind-tunnel and NASA data. Lift within 1 %, drag at 0° within 2 %. Interactive flow explorer.</p>
+          <span class="mono muted">OpenFOAM · validation · 2D</span>
+        </div>
+      </a>
+
       <a class="card" href="projects/nascar-truck/index.html">
         <div class="thumb">
           <div class="viewer" data-mini="true" data-model="projects/nascar-truck/models/truck.glb" data-up="z" data-flow="none"
@@ -71,33 +97,7 @@
         </div>
       </a>
 
-      <a class="card" href="projects/naca0012-airfoil/index.html">
-        <div class="thumb">
-          <img src="projects/naca0012-airfoil/thumb.jpg?v=3" alt="Streamlines coloured by speed around a NACA 0012 airfoil pitched to 15 degrees" loading="lazy"
-               style="width:100%;height:100%;object-fit:cover;display:block">
-        </div>
-        <div class="body">
-          <span class="status done">Complete</span>
-          <h3 style="margin-top:10px">NACA 0012 Airfoil Validation</h3>
-          <p>A full lift polar from 0° to 18° at Re = 6 million, checked against wind-tunnel and NASA data. Lift within 1 %, drag at 0° within 2 %. Interactive flow explorer.</p>
-          <span class="mono muted">OpenFOAM · validation · 2D</span>
-        </div>
-      </a>
-
-      <a class="card" href="projects/cooling-tower-plume/index.html">
-        <div class="thumb">
-          <img src="projects/cooling-tower-plume/thumb.jpg" alt="Warm air rising through a hyperbolic natural-draft cooling tower" loading="lazy"
-               style="width:100%;height:100%;object-fit:cover;display:block">
-        </div>
-        <div class="body">
-          <span class="status wip">In progress</span>
-          <h3 style="margin-top:10px">Cooling Tower Plume Dispersion</h3>
-          <p>A 492 ft natural-draft cooling tower driven by buoyancy alone (buoyantSimpleFoam, k-ω SST, 1.16M cells). Phase 1: 97 % of design air flow, energy balance closes. Plume in a crosswind next.</p>
-          <span class="mono muted">OpenFOAM · buoyant flow · environmental</span>
-        </div>
-      </a>
-
-      <!-- To add a project: copy one of the cards above, change the link, model path and text.
+      <!-- Newest project first. To add a project: copy a card, put it at the TOP of this list, change the link, model path and text.
            See docs/ADD-A-PROJECT.md -->
 
     </div>

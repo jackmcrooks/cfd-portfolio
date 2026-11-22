@@ -6,8 +6,8 @@
    (see `EXPORT-FROM-PARAVIEW.md`). In the new `index.html`, set `data-model="models/your-file.gltf"`.
 3. **Fill in the page.** Edit the title, summary, key numbers, setup table, and what you learned.
    Every spot to change is marked with `…` or placeholder text.
-4. **Add a card on the home page.** In the top-level `index.html`, copy one of the `<a class="card">` blocks
-   and change its link (`projects/your-folder/index.html`), model path, and text.
+4. **Add a card on the home page.** In the top-level `index.html`, copy one of the `<a class="card">` blocks,
+   paste it at the **top** of the list (newest project first), and change its link (`projects/your-folder/index.html`), model path, and text.
    - Status badge: `status wip` (In progress), `status done` (Complete), or `status planned` (Planned).
 5. **Optional: include the OpenFOAM case.** Make a `case/` folder inside the project with just
    `0/`, `constant/` (without `polyMesh`) and `system/`. That lets people rerun your case.
