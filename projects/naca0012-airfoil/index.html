@@ -16,6 +16,7 @@
     .tabs button:hover, .seg button:hover { border-color: var(--accent); color: var(--text); }
     .tabs button[aria-pressed="true"], .seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
     .seg { display: inline-flex; gap: 4px; }
+    #smokeAngles { flex-wrap: wrap; }
     .toolrow { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; margin-bottom: 12px; }
     .toollbl { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 6px; }
     .check { font-size: 0.85rem; color: var(--text-2); display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
@@ -106,7 +107,7 @@
     <h2>Flow explorer</h2>
     <p class="muted" style="font-size:0.9rem;margin-top:-4px">The velocity and pressure fields from each run, drawn in your browser as in a
       wind tunnel: the air always comes from the left and the airfoil pitches up about its quarter chord. Drag the wing's tail, the slider, or press Sweep
-      to change the angle of attack, click anywhere to trace a streamline from that point (or switch to Smoke probe and drag the smoke wand around, as in a wind tunnel), and hover for values.</p>
+      to change the angle of attack, click anywhere to trace a streamline from that point, and hover for values.</p>
 
     <div class="panel">
       <div class="angle-pick">
@@ -123,10 +124,8 @@
         <label class="check"><input type="checkbox" id="optStream" checked> Streamlines</label>
         <label class="check"><input type="checkbox" id="optAnim" checked> Animate</label>
         <label class="check"><input type="checkbox" id="optMesh"> Show mesh</label>
-        <div><span class="toollbl">Click adds</span><span class="seg" id="clickSeg">
-          <button data-t="line" aria-pressed="true">Streamline</button><button data-t="smoke">Smoke probe</button></span></div>
         <button class="btn" id="sweep">▶ Sweep angles</button>
-        <button class="btn" id="clearSeeds">Clear streamlines &amp; smoke</button>
+        <button class="btn" id="clearSeeds">Clear my streamlines</button>
       </div>
 
       <div class="explore"><div class="explore-main">
@@ -141,6 +140,23 @@
       <div class="minis" id="minis"></div></div>
 
       <div class="strip" id="strip"></div>
+    </div>
+  </section>
+
+  <!-- 3b. Smoke tunnel -->
+  <section style="padding-top:0" id="smoke-tunnel">
+    <h2>Smoke tunnel</h2>
+    <p class="muted" style="font-size:0.9rem;margin-top:-4px">A smoke wand, as in a wind tunnel. Drag it anywhere in the flow (or tap to move it)
+      and watch the smoke follow the computed velocity field: it splits at the stagnation point, speeds over the top and lags under the bottom.</p>
+    <div class="panel">
+      <div class="toolrow">
+        <div><span class="toollbl">Angle</span><span class="seg" id="smokeAngles"></span></div>
+        <div><span class="toollbl">Background</span><span class="seg" id="smokeBgSeg">
+          <button data-t="dark" aria-pressed="true">Dark</button><button data-t="speed">Speed</button></span></div>
+        <button class="btn" id="smokeReset">Reset wand</button>
+      </div>
+      <div class="flow-wrap" id="smokeWrap"><canvas id="smoke" style="cursor:grab"></canvas>
+        <div class="hint">drag the orange wand anywhere</div></div>
     </div>
   </section>
 
@@ -285,6 +301,6 @@
 
 <footer><div class="wrap">© Jack Crooks · Hosted on GitHub Pages</div></footer>
 
-<script type="module" src="airfoil.js?v=17"></script>
+<script type="module" src="airfoil.js?v=19"></script>
 </body>
 </html>

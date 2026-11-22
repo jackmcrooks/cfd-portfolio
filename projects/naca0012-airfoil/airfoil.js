@@ -14,7 +14,7 @@ const fmt = (v, d) => (v == null || Number.isNaN(v) ? "–" : v.toFixed(d));
 const pct = (a, b) => (b ? `${a >= b ? "+" : "−"}${Math.abs((100 * (a - b)) / b).toFixed(1)} %` : "");
 
 let D, FI;                          // page data, field index
-const state = { i: 3, view: "full", colour: "speed", clickMode: "line", polarTab: "cl", surfTab: "cp", convTab: "cl", gridTab: "0" };
+const state = { i: 3, view: "full", colour: "speed", smokeBg: "dark", polarTab: "cl", surfTab: "cp", convTab: "cl", gridTab: "0" };
 const listeners = [];
 const onAngle = (f) => listeners.push(f);
 function setAngle(i) {
@@ -161,6 +161,13 @@ async function loadField(alpha, view) {
   return fieldCache[key];
 }
 
+function sampleField(F, arr, x, y) {    // bilinear, NaN inside the airfoil or outside the box
+  const fx = ((x - F.x[0]) / (F.x[1] - F.x[0])) * (F.nx - 1), fy = ((y - F.y[0]) / (F.y[1] - F.y[0])) * (F.ny - 1);
+  if (fx < 0 || fy < 0 || fx > F.nx - 1 || fy > F.ny - 1) return NaN;
+  const i = Math.min(Math.floor(fx), F.nx - 2), j = Math.min(Math.floor(fy), F.ny - 2), a = fx - i, b = fy - j, n = F.nx;
+  return (1 - a) * (1 - b) * arr[j * n + i] + a * (1 - b) * arr[j * n + i + 1] + (1 - a) * b * arr[(j + 1) * n + i] + a * b * arr[(j + 1) * n + i + 1];
+}
+
 let meshPts = null;
 async function loadMesh() {
   if (!meshPts) {
@@ -174,45 +181,7 @@ function explorer() {
   const cv = $("flow"), ctx = cv.getContext("2d"), wrap = $("flowWrap");
   let F = null, lines = [], seeds = [], fieldImg = null, meshImg = null, anim = 0, phase = 0;
   let drag = null, hoverTE = false, dragTaught = false, justDragged = false;   // drag-the-wing state
-  // smoke probes: each probe releases puffs every frame; puffs ride the local velocity (RK2) and fade with age
-  let probes = [], puffs = [], moving = null, puffView = state.view;
-  const PUFF_AGE = 420;                    // frames; about one crossing of the window at free-stream speed
-  const liveProbes = () => probes.filter((p) => p.view === state.view);
-  const needLoop = () => $("optAnim").checked || liveProbes().length > 0;
-  function stepSmoke() {
-    if (puffView !== state.view) { puffs = []; puffView = state.view; }
-    const v = view(), w = v.x[1] - v.x[0], dt = 0.0025 * w, jit = 0.004 * w;   // same pace as the streamline pulses
-    liveProbes().forEach((p) => { for (let k = 0; k < 3; k++) {
-      const x = p.x + (Math.random() - 0.5) * jit, y = p.y + (Math.random() - 0.5) * jit;
-      if (!Number.isNaN(sample(F.ux, x, y))) puffs.push({ x, y, age: 0 }); } });
-    const keep = [];
-    for (const q of puffs) {
-      const u1 = sample(F.ux, q.x, q.y), w1 = sample(F.uy, q.x, q.y); if (Number.isNaN(u1)) continue;
-      const u2 = sample(F.ux, q.x + 0.5 * dt * u1, q.y + 0.5 * dt * w1), w2 = sample(F.uy, q.x + 0.5 * dt * u1, q.y + 0.5 * dt * w1);
-      if (Number.isNaN(u2)) continue;                  // left the window or hit the airfoil
-      q.x += dt * u2; q.y += dt * w2;
-      if (++q.age < PUFF_AGE) keep.push(q);
-    }
-    puffs = keep.length > 6000 ? keep.slice(keep.length - 6000) : keep;
-  }
-  function drawSmoke() {
-    if (!puffs.length && !liveProbes().length) return;
-    const r0 = Math.max(1.3, cv.width / 800);
-    for (let b = 0; b < 8; b++) {                       // 8 fade levels: fewer style changes than one per puff
-      ctx.fillStyle = `rgba(255,255,255,${(0.6 * (1 - b / 8)).toFixed(2)})`; ctx.beginPath();
-      for (const q of puffs) { const f = q.age / PUFF_AGE; if (Math.min(7, Math.floor(f * 8)) !== b) continue;
-        const [a, c] = toPx(q.x, q.y), r = r0 * (1 + 2.2 * f); ctx.moveTo(a + r, c); ctx.arc(a, c, r, 0, 7); }
-      ctx.fill();
-    }
-    liveProbes().forEach((p) => {                       // the smoke wand
-      const [a, c] = toPx(p.x, p.y), L = Math.max(30, cv.width / 22), r = Math.max(6, cv.width / 170);
-      ctx.lineCap = "round"; ctx.strokeStyle = "#000"; ctx.lineWidth = Math.max(5, cv.width / 250);
-      ctx.beginPath(); ctx.moveTo(a - L, c + L * 0.6); ctx.lineTo(a, c); ctx.stroke();
-      ctx.strokeStyle = "#f2a03d"; ctx.lineWidth = Math.max(3, cv.width / 400); ctx.stroke(); ctx.lineCap = "butt";
-      ctx.beginPath(); ctx.arc(a, c, r, 0, 7); ctx.fillStyle = "#f2a03d"; ctx.fill();
-      ctx.lineWidth = 2; ctx.strokeStyle = "#000"; ctx.stroke();
-    });
-  }
+  const needLoop = () => $("optAnim").checked;
   const view = () => F || FI.views[state.view];   // the sampling window of the field on screen
   // wind frame: the data is rotated so the free stream is horizontal and the airfoil pitches nose-up
   // by alpha about the quarter chord. Airfoil outline and mesh (body coordinates) are rotated to match.
@@ -228,12 +197,7 @@ function explorer() {
   const toPx = (x, y) => { const v = view(); return [((x - v.x[0]) / (v.x[1] - v.x[0])) * cv.width, (1 - (y - v.y[0]) / (v.y[1] - v.y[0])) * cv.height]; };
   const toXY = (px, py) => { const v = view(); return [v.x[0] + (px / cv.width) * (v.x[1] - v.x[0]), v.y[0] + (1 - py / cv.height) * (v.y[1] - v.y[0])]; };
 
-  function sample(arr, x, y) {      // bilinear, NaN inside the airfoil or outside the box
-    const fx = ((x - F.x[0]) / (F.x[1] - F.x[0])) * (F.nx - 1), fy = ((y - F.y[0]) / (F.y[1] - F.y[0])) * (F.ny - 1);
-    if (fx < 0 || fy < 0 || fx > F.nx - 1 || fy > F.ny - 1) return NaN;
-    const i = Math.min(Math.floor(fx), F.nx - 2), j = Math.min(Math.floor(fy), F.ny - 2), a = fx - i, b = fy - j, n = F.nx;
-    return (1 - a) * (1 - b) * arr[j * n + i] + a * (1 - b) * arr[j * n + i + 1] + (1 - a) * b * arr[(j + 1) * n + i] + a * b * arr[(j + 1) * n + i + 1];
-  }
+  const sample = (arr, x, y) => sampleField(F, arr, x, y);
   // one colour scale for every angle and both views. Speed tops out at 2.2 (red) so the suction side shows up;
   // faster flow (only near the nose above ~10 deg, max 3.72) stays dark red. Cp covers its full range (-13.2).
   const range = () => (state.colour === "speed" ? [0, 2.2] : [-13.5, 1]);
@@ -316,7 +280,6 @@ function explorer() {
         }
       });
     }
-    drawSmoke();
     const fs = Math.max(11, cv.width / 70), alpha = D.runs[state.i].alpha;
     if (state.view === "full") {            // horizontal reference through the pivot + chord line, to read alpha
       const [x0, y0] = toPx(view().x[0], 0), [x1] = toPx(view().x[1], 0), [te0, te1] = toPx(...toWind(1.35, 0));
@@ -354,13 +317,12 @@ function explorer() {
     ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax - 9, ay - 4); ctx.lineTo(ax - 9, ay + 4); ctx.fill();
     ctx.font = `${fs}px Inter, sans-serif`; ctx.fillText("U∞", ax + 6, ay + 4);
   }
-  let lastT = 0, acc = 0;                  // advance by real time (60 steps/s) so slow computers show the same speed
+  let lastT = 0;                  // advance by real time (60 steps/s) so slow computers show the same speed
   function loop(now = performance.now()) {
     const steps = lastT ? Math.min((now - lastT) / 16.7, 6) : 1; lastT = now;
     phase += 0.0025 * (view().x[1] - view().x[0]) * steps;
-    if (F && (puffs.length || liveProbes().length)) { acc += steps; for (; acc >= 1; acc--) stepSmoke(); }
     draw();
-    anim = needLoop() || puffs.length ? requestAnimationFrame(loop) : 0;
+    anim = needLoop() ? requestAnimationFrame(loop) : 0;
     if (!anim) lastT = 0;
   }
   async function refresh(rebuild = true) {
@@ -379,30 +341,23 @@ function explorer() {
   cv.addEventListener("pointerdown", (ev) => {
     if (!F) return;
     const [x, y] = evXY(ev);
-    if (!nearTE(x, y)) {
-      if (state.clickMode !== "smoke" || Number.isNaN(sample(F.speed, x, y))) return;
-      moving = { x, y, view: state.view }; probes = [moving];        // one wand: a click moves it there, hold and drag to sweep it around
-      cv.setPointerCapture(ev.pointerId); cv.style.cursor = "move"; if (!anim) loop();
-      ev.preventDefault(); return;
-    }
+    if (!nearTE(x, y)) return;
     drag = { a: pointerAlpha(x, y) }; dragTaught = true; cv.setPointerCapture(ev.pointerId); cv.style.cursor = "grabbing";
     D.runs.forEach((r) => loadField(r.alpha, "full"));                // prefetch so the wing follows the pointer
     ev.preventDefault();
   });
   cv.addEventListener("pointermove", (ev) => {
-    if (moving) { const [x, y] = evXY(ev); if (!Number.isNaN(sample(F.speed, x, y))) { moving.x = x; moving.y = y; } return; }
     if (!drag) return;
     const [x, y] = evXY(ev); drag.a = pointerAlpha(x, y);
     let k = 0; D.runs.forEach((r, j) => { if (Math.abs(r.alpha - drag.a) < Math.abs(D.runs[k].alpha - drag.a)) k = j; });
     if (k !== state.i) setAngle(k); else if (!anim) draw();
   });
   const endDrag = (ev) => {
-    if (moving) { moving = null; justDragged = true; cv.style.cursor = ""; try { cv.releasePointerCapture(ev.pointerId); } catch (e) { /* released */ } return; }
     if (!drag) return; drag = null; justDragged = true; cv.style.cursor = ""; try { cv.releasePointerCapture(ev.pointerId); } catch (e) { /* already released */ } if (!anim) draw(); };
   cv.addEventListener("pointerup", endDrag); cv.addEventListener("pointercancel", endDrag);
 
   cv.addEventListener("mousemove", (ev) => {
-    if (!F || drag || moving) return;
+    if (!F || drag) return;
     const r = cv.getBoundingClientRect(), [x, y] = toXY(((ev.clientX - r.left) / r.width) * cv.width, ((ev.clientY - r.top) / r.height) * cv.height);
     const h = nearTE(x, y); if (h !== hoverTE) { hoverTE = h; cv.style.cursor = h ? "grab" : ""; if (!anim) draw(); }
     const s = sample(F.speed, x, y), cp = sample(F.cp, x, y), [bx, by] = toBody(x, y);   // position along the chord
@@ -411,20 +366,11 @@ function explorer() {
   });
   cv.addEventListener("click", (ev) => {
     if (justDragged) { justDragged = false; return; }       // the click that ends a drag is not a streamline seed
-    if (state.clickMode === "smoke") return;
     const r = cv.getBoundingClientRect(), [x, y] = toXY(((ev.clientX - r.left) / r.width) * cv.width, ((ev.clientY - r.top) / r.height) * cv.height);
     if (Number.isNaN(sample(F.speed, x, y))) return;
     seeds.push({ x, y, view: state.view }); buildLines(); if (!anim) draw();
   });
-  $("clearSeeds").addEventListener("click", () => { seeds = []; probes = []; puffs = []; buildLines(); if (!anim) draw(); });
-  tabs("clickSeg", "clickMode", () => {
-    if (state.clickMode === "smoke" && !liveProbes().length && F) {   // start with the wand just upstream of the nose
-      const v = view(); probes = [{ x: v.x[0] + 0.12 * (v.x[1] - v.x[0]), y: FI.pivot[0] * Math.sin((D.runs[state.i].alpha * Math.PI) / 180) - 0.01 * (v.y[1] - v.y[0]), view: state.view }];
-      if (!anim) loop();
-    }
-    $("flowHint").textContent = state.clickMode === "smoke" ? "click to move the smoke wand, or hold and drag it anywhere"
-      : "drag the tail to pitch the wing · click: add a streamline";
-  });
+  $("clearSeeds").addEventListener("click", () => { seeds = []; buildLines(); if (!anim) draw(); });
   let sweep = 0;                           // step through all angles to watch the airfoil pitch up
   $("sweep").addEventListener("click", () => {
     if (sweep) { clearInterval(sweep); sweep = 0; $("sweep").textContent = "▶ Sweep angles"; return; }
@@ -438,6 +384,106 @@ function explorer() {
   tabs("colSeg", "colour", () => refresh(false));
   window.addEventListener("resize", () => { clearTimeout(window._rt); window._rt = setTimeout(() => refresh(false), 150); });
   onAngle(() => refresh());
+}
+
+// =============================================================
+//  Smoke tunnel: one smoke wand you move anywhere; puffs ride the CFD velocity field (wind frame, whole-airfoil view)
+// =============================================================
+function tunnel() {
+  const cv = $("smoke"), ctx = cv.getContext("2d"), wrap = $("smokeWrap"), AGE = 420;
+  let F = null, bgImg = null, wand = null, puffs = [], moving = false, raf = 0, lastT = 0, acc = 0, onScreen = false;
+  const rot = () => { const a = (D.runs[state.i].alpha * Math.PI) / 180; return [Math.cos(a), Math.sin(a), FI.pivot[0]]; };
+  const toWind = (x, y) => { const [c, s, p] = rot(), dx = x - p; return [p + dx * c + y * s, -dx * s + y * c]; };
+  const box = () => F || { ...FI.views.full, ...FI.angles[state.i].boxes.full };
+  const toPx = (x, y) => { const v = box(); return [((x - v.x[0]) / (v.x[1] - v.x[0])) * cv.width, (1 - (y - v.y[0]) / (v.y[1] - v.y[0])) * cv.height]; };
+  const evXY = (ev) => { const r = cv.getBoundingClientRect(), v = box();
+    return [v.x[0] + ((ev.clientX - r.left) / r.width) * (v.x[1] - v.x[0]), v.y[1] - ((ev.clientY - r.top) / r.height) * (v.y[1] - v.y[0])]; };
+  const ok = (x, y) => F && !Number.isNaN(sampleField(F, F.ux, x, y));
+  function size() {
+    const v = box(), dpr = Math.min(window.devicePixelRatio || 1, 2), w = wrap.clientWidth;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(w * ((v.y[1] - v.y[0]) / (v.x[1] - v.x[0])) * dpr);
+  }
+  function paintBg() {                       // dark tunnel, or the speed field faintly behind the smoke
+    bgImg = null;
+    if (state.smokeBg !== "speed" || !F) return;
+    const img = new ImageData(F.nx, F.ny);
+    for (let j = 0; j < F.ny; j++) for (let i = 0; i < F.nx; i++) {
+      const v = F.speed[j * F.nx + i], o = ((F.ny - 1 - j) * F.nx + i) * 4; if (Number.isNaN(v)) continue;
+      const [r, g, b] = turbo(v / 2.2); img.data[o] = r * 0.55; img.data[o + 1] = g * 0.55; img.data[o + 2] = b * 0.55; img.data[o + 3] = 255;
+    }
+    bgImg = document.createElement("canvas"); bgImg.width = F.nx; bgImg.height = F.ny; bgImg.getContext("2d").putImageData(img, 0, 0);
+  }
+  function step() {                          // emit at the wand, move every puff with the local velocity (RK2)
+    const v = box(), w = v.x[1] - v.x[0], dt = 0.0025 * w, jit = 0.003 * w;
+    if (wand) for (let k = 0; k < 4; k++) {
+      const x = wand.x + (Math.random() - 0.5) * jit, y = wand.y + (Math.random() - 0.5) * jit;
+      if (ok(x, y)) puffs.push({ x, y, age: 0 });
+    }
+    const keep = [];
+    for (const q of puffs) {
+      const u1 = sampleField(F, F.ux, q.x, q.y), w1 = sampleField(F, F.uy, q.x, q.y); if (Number.isNaN(u1)) continue;
+      const xm = q.x + 0.5 * dt * u1, ym = q.y + 0.5 * dt * w1, u2 = sampleField(F, F.ux, xm, ym), w2 = sampleField(F, F.uy, xm, ym);
+      if (Number.isNaN(u2)) continue;          // left the tunnel or hit the airfoil
+      q.x += dt * u2; q.y += dt * w2;
+      if (++q.age < AGE) keep.push(q);
+    }
+    puffs = keep.length > 8000 ? keep.slice(keep.length - 8000) : keep;
+  }
+  function draw() {
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, cv.width, cv.height);
+    if (bgImg) { ctx.imageSmoothingEnabled = true; ctx.drawImage(bgImg, 0, 0, cv.width, cv.height); }
+    if (!F) return;
+    const r0 = Math.max(1.3, cv.width / 750);
+    for (let b = 0; b < 8; b++) {              // 8 fade levels
+      ctx.fillStyle = `rgba(255,255,255,${(0.65 * (1 - b / 8)).toFixed(2)})`; ctx.beginPath();
+      for (const q of puffs) { const f = q.age / AGE; if (Math.min(7, Math.floor(f * 8)) !== b) continue;
+        const [a, c] = toPx(q.x, q.y), r = r0 * (1 + 2.2 * f); ctx.moveTo(a + r, c); ctx.arc(a, c, r, 0, 7); }
+      ctx.fill();
+    }
+    ctx.fillStyle = "#1c1c21"; ctx.strokeStyle = "#d9dee8"; ctx.lineWidth = Math.max(1.2, cv.width / 700);
+    ctx.beginPath(); OUTLINE.forEach((p, k) => { const [a, b] = toPx(...toWind(p[0], p[1])); k ? ctx.lineTo(a, b) : ctx.moveTo(a, b); });
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    if (wand) {                                // the wand
+      const [a, c] = toPx(wand.x, wand.y), L = Math.max(30, cv.width / 22), r = Math.max(6, cv.width / 170);
+      ctx.lineCap = "round"; ctx.strokeStyle = "#000"; ctx.lineWidth = Math.max(5, cv.width / 250);
+      ctx.beginPath(); ctx.moveTo(a - L, c + L * 0.6); ctx.lineTo(a, c); ctx.stroke();
+      ctx.strokeStyle = C.exp; ctx.lineWidth = Math.max(3, cv.width / 400); ctx.stroke(); ctx.lineCap = "butt";
+      ctx.beginPath(); ctx.arc(a, c, r, 0, 7); ctx.fillStyle = C.exp; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = "#000"; ctx.stroke();
+    }
+    const fs = Math.max(12, cv.width / 60);
+    ctx.fillStyle = C.text; ctx.font = `600 ${fs}px Inter, sans-serif`; ctx.fillText(`α = ${D.runs[state.i].alpha}°`, fs * 0.8, fs * 1.6);
+    ctx.font = `${fs * 0.85}px Inter, sans-serif`; ctx.fillStyle = C.text2; ctx.fillText("wind →", fs * 0.8, fs * 3.0);
+  }
+  function loop(now = performance.now()) {   // real-time pace (60 steps/s) on any frame rate
+    const steps = lastT ? Math.min((now - lastT) / 16.7, 6) : 1; lastT = now;
+    if (F) { acc += steps; for (; acc >= 1; acc--) step(); }
+    draw();
+    raf = onScreen ? requestAnimationFrame(loop) : 0;
+    if (!raf) lastT = 0;
+  }
+  const start = () => { if (!raf && onScreen) raf = requestAnimationFrame(loop); };
+  const resetWand = () => { const v = box(); wand = { x: v.x[0] + 0.12 * (v.x[1] - v.x[0]), y: FI.pivot[0] * Math.sin((D.runs[state.i].alpha * Math.PI) / 180) - 0.012 }; };
+  async function refresh() {
+    F = await loadField(D.runs[state.i].alpha, "full");
+    size(); paintBg();
+    if (!wand) resetWand();
+    if (!ok(wand.x, wand.y)) resetWand();       // the airfoil pitched onto the wand
+    draw(); start();
+  }
+  cv.addEventListener("pointerdown", (ev) => {
+    const [x, y] = evXY(ev); if (!ok(x, y)) return;
+    wand = { x, y }; moving = true; cv.setPointerCapture(ev.pointerId); cv.style.cursor = "grabbing"; ev.preventDefault();
+  });
+  cv.addEventListener("pointermove", (ev) => { if (!moving) return; const [x, y] = evXY(ev); if (ok(x, y)) wand = { x, y }; });
+  const up = (ev) => { if (!moving) return; moving = false; cv.style.cursor = ""; try { cv.releasePointerCapture(ev.pointerId); } catch (e) { /* released */ } };
+  cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+  $("smokeReset").addEventListener("click", () => { puffs = []; resetWand(); });
+  $("smokeAngles").innerHTML = D.runs.map((r, k) => `<button data-k="${k}">${r.alpha}°</button>`).join("");
+  $("smokeAngles").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => setAngle(+b.dataset.k)));
+  tabs("smokeBgSeg", "smokeBg", () => { paintBg(); draw(); });
+  onAngle(() => { $("smokeAngles").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", +b.dataset.k === state.i)); refresh(); });
+  new IntersectionObserver((es) => { onScreen = es[0].isIntersecting; start(); }).observe(cv);   // animate only while visible
+  window.addEventListener("resize", () => { clearTimeout(window._st); window._st = setTimeout(() => { size(); paintBg(); draw(); }, 150); });
 }
 
 // =============================================================
@@ -640,7 +686,7 @@ async function main() {
   tabs("convTabs", "convTab", convergence);
   tabs("gridTabs", "gridTab", grid);
   onAngle(strip); onAngle(minis); onAngle(polar); onAngle(surface); onAngle(convergence);
-  explorer(); calc(); grid(); valTable();
+  explorer(); tunnel(); calc(); grid(); valTable();
   let rz = 0, lastW = window.innerWidth;
   window.addEventListener("resize", () => { if (window.innerWidth === lastW) return; lastW = window.innerWidth;
     clearTimeout(rz); rz = setTimeout(() => { polar(); surface(); convergence(); grid(); }, 150); });
