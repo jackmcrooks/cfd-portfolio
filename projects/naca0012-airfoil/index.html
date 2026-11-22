@@ -106,7 +106,7 @@
     <h2>Flow explorer</h2>
     <p class="muted" style="font-size:0.9rem;margin-top:-4px">The velocity and pressure fields from each run, drawn in your browser as in a
       wind tunnel: the air always comes from the left and the airfoil pitches up about its quarter chord. Drag the wing's tail, the slider, or press Sweep
-      to change the angle of attack, click anywhere to trace a streamline from that point, and hover for values.</p>
+      to change the angle of attack, click anywhere to trace a streamline from that point (or switch to Smoke probe and drag the smoke wand around, as in a wind tunnel), and hover for values.</p>
 
     <div class="panel">
       <div class="angle-pick">
@@ -123,8 +123,10 @@
         <label class="check"><input type="checkbox" id="optStream" checked> Streamlines</label>
         <label class="check"><input type="checkbox" id="optAnim" checked> Animate</label>
         <label class="check"><input type="checkbox" id="optMesh"> Show mesh</label>
+        <div><span class="toollbl">Click adds</span><span class="seg" id="clickSeg">
+          <button data-t="line" aria-pressed="true">Streamline</button><button data-t="smoke">Smoke probe</button></span></div>
         <button class="btn" id="sweep">▶ Sweep angles</button>
-        <button class="btn" id="clearSeeds">Clear my streamlines</button>
+        <button class="btn" id="clearSeeds">Clear streamlines &amp; smoke</button>
       </div>
 
       <div class="explore"><div class="explore-main">
@@ -132,7 +134,7 @@
         <canvas id="flow"></canvas>
         <div class="readout" id="readout">hover the flow</div>
         <div class="loading" id="flowLoading">loading…</div>
-        <div class="hint">drag the tail to pitch the wing · click: add a streamline</div>
+        <div class="hint" id="flowHint">drag the tail to pitch the wing · click: add a streamline</div>
       </div>
       <div class="cbar"><span id="cbLo"></span><canvas id="cbar" width="360" height="10"></canvas><span id="cbHi"></span><span id="cbName" class="muted"></span></div>
       </div>
@@ -284,6 +286,6 @@
 
 <footer><div class="wrap">© Jack Crooks · Hosted on GitHub Pages</div></footer>
 
-<script type="module" src="airfoil.js?v=10"></script>
+<script type="module" src="airfoil.js?v=14"></script>
 </body>
 </html>
