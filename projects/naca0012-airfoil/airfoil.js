@@ -399,7 +399,7 @@ function tunnel() {
   const evXY = (ev) => { const r = cv.getBoundingClientRect(), v = box();
     return [v.x[0] + ((ev.clientX - r.left) / r.width) * (v.x[1] - v.x[0]), v.y[1] - ((ev.clientY - r.top) / r.height) * (v.y[1] - v.y[0])]; };
   const ok = (x, y) => F && !Number.isNaN(sampleField(F, F.ux, x, y));
-  const RAKE_N = 15, RAKE_SPAN = 0.5;          // rake: 15 nozzles over half a chord, like a wind-tunnel smoke rake
+  let RAKE_N = 15; const RAKE_SPAN = 0.5;      // rake: N nozzles (slider, 3-40) over half a chord, like a wind-tunnel smoke rake
   const nozzles = () => state.smokeTool === "rake"
     ? Array.from({ length: RAKE_N }, (_, k) => [wand.x, wand.y + (k / (RAKE_N - 1) - 0.5) * RAKE_SPAN]) : [[wand.x, wand.y]];
   const okHandle = (x, y) => (state.smokeTool === "rake" ? F && x > box().x[0] && x < box().x[1] && y > box().y[0] && y < box().y[1] : ok(x, y));
@@ -431,7 +431,8 @@ function tunnel() {
       q.x += dt * u2; q.y += dt * w2;
       if (++q.age < AGE) keep.push(q);
     }
-    puffs = keep.length > 9000 ? keep.slice(keep.length - 9000) : keep;
+    const cap = Math.max(9000, 450 * nozzles().length);   // room for a full-length streak from every nozzle
+    puffs = keep.length > cap ? keep.slice(keep.length - cap) : keep;
   }
   function draw() {
     ctx.fillStyle = "#000"; ctx.fillRect(0, 0, cv.width, cv.height);
@@ -498,7 +499,8 @@ function tunnel() {
   $("smokeAngles").innerHTML = D.runs.map((r, k) => `<button data-k="${k}">${r.alpha}°</button>`).join("");
   $("smokeAngles").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => setAngle(+b.dataset.k)));
   tabs("smokeBgSeg", "smokeBg", () => { paintBg(); draw(); });
-  tabs("smokeToolSeg", "smokeTool", () => { puffs = []; resetWand();
+  $("rakeN").addEventListener("input", (e) => { RAKE_N = +e.target.value; $("rakeNOut").textContent = RAKE_N; });
+  tabs("smokeToolSeg", "smokeTool", () => { puffs = []; resetWand(); $("rakeNBox").hidden = state.smokeTool !== "rake";
     $("smokeHint").textContent = state.smokeTool === "rake" ? "drag the rake anywhere, or click to move it there" : "drag the orange wand anywhere"; });
   onAngle(() => { $("smokeAngles").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", +b.dataset.k === state.i)); refresh(); });
   new IntersectionObserver((es) => { onScreen = es[0].isIntersecting; start(); }).observe(cv);   // animate only while visible
