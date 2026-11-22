@@ -1,0 +1,132 @@
+{
+ "run": "run01_dryheat_calm_279MW",
+ "iteration": 3000.0,
+ "units": "ft",
+ "fields": [
+  {
+   "name": "dT_F",
+   "label": "Air warmer than outside",
+   "unit": "F",
+   "range": [
+    0,
+    30
+   ],
+   "map": "heat"
+  },
+  {
+   "name": "speed_fts",
+   "label": "Air speed",
+   "unit": "ft/s",
+   "range": [
+    0,
+    40
+   ],
+   "map": "speed"
+  },
+  {
+   "name": "up_fts",
+   "label": "Upward speed",
+   "unit": "ft/s",
+   "range": [
+    -15,
+    40
+   ],
+   "map": "diverge"
+  },
+  {
+   "name": "draft_inH2O",
+   "label": "Pressure vs outside (draft)",
+   "unit": "in H2O",
+   "range": [
+    -0.35,
+    0.35
+   ],
+   "map": "diverge"
+  }
+ ],
+ "layers": [
+  {
+   "name": "cutVertical",
+   "label": "Vertical cut through the axis",
+   "kind": "cut",
+   "points": 8945,
+   "triangles": 17618,
+   "bytes": 461876
+  },
+  {
+   "name": "cutInlet",
+   "label": "Horizontal, 16 ft (through the columns)",
+   "kind": "cut",
+   "points": 30051,
+   "triangles": 59052,
+   "bytes": 1550052
+  },
+  {
+   "name": "cutFill",
+   "label": "Horizontal, 48 ft (just above the fill)",
+   "kind": "cut",
+   "points": 14152,
+   "triangles": 27879,
+   "bytes": 730804
+  },
+  {
+   "name": "cutThroat",
+   "label": "Horizontal, 378 ft (throat)",
+   "kind": "cut",
+   "points": 1463,
+   "triangles": 2779,
+   "bytes": 74312
+  },
+  {
+   "name": "cutExit",
+   "label": "Horizontal, 490 ft (tower top)",
+   "kind": "cut",
+   "points": 3519,
+   "triangles": 6870,
+   "bytes": 180972
+  },
+  {
+   "name": "streamlines",
+   "label": "Streamlines (air paths)",
+   "kind": "lines",
+   "points": 47520,
+   "lines": 148,
+   "bytes": 1521236,
+   "max_time_s": 491398.5625
+  },
+  {
+   "name": "shell",
+   "kind": "wall",
+   "points": 11664,
+   "triangles": 23040,
+   "bytes": 416448
+  },
+  {
+   "name": "columns",
+   "kind": "wall",
+   "points": 10360,
+   "triangles": 20480,
+   "bytes": 370080
+  }
+ ],
+ "summary": {
+  "throat_flow_lb_min": 2827512.0,
+  "fill_velocity_fts": 6.12,
+  "exit_rise_F": 22.6
+ },
+ "design": {
+  "flow_lb_min": 2916000,
+  "fill_fts": 6.6,
+  "rise_F": 22.7,
+  "draft_inH2O": 0.28
+ },
+ "heatZone_ft": {
+  "radius": 175.56,
+  "z0": 39.37,
+  "z1": 44.29
+ },
+ "domain_ft": {
+  "half_width": 1259.8,
+  "height": 1469.8
+ }
+}

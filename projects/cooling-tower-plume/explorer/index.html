@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NDCT Flow Results</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600&display=swap">
+<style>
+/* Layout: full-height tool. Left: layers, legend, views, mesh stats. Right: 3D scene. Stacks on phones. */
+:root {
+  --bg: #f3f4f2;
+  --panel: #fbfbfa;
+  --fg: #1d2224;
+  --muted: #5d676b;
+  --line: #d9dddb;
+  --accent: #2f6f8f;
+  --heat: #d9622b;
+  --scene: #e9ecea;
+  --concrete: #c9c4ba;
+  --column: #a29e96;
+  --ground: #b9c2c0;
+  --edge: #2a2f31;
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --font-head: "IBM Plex Sans Condensed", "IBM Plex Sans", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15191b; --panel: #1b2023; --fg: #e3e7e6; --muted: #9aa5a8; --line: #2c3337;
+    --accent: #6cb2d3; --heat: #f08a4b; --scene: #101416; --concrete: #8f8a80; --column: #75726b;
+    --ground: #3b4649; --edge: #0b0d0e;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15191b; --panel: #1b2023; --fg: #e3e7e6; --muted: #9aa5a8; --line: #2c3337;
+  --accent: #6cb2d3; --heat: #f08a4b; --scene: #101416; --concrete: #8f8a80; --column: #75726b;
+  --ground: #3b4649; --edge: #0b0d0e;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 14px; }
+.app { display: grid; grid-template-columns: 340px 1fr; height: 100%; min-height: 0; }
+.panel {
+  background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; min-width: 0;
+  padding-block: 18px 28px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: 18px;
+  display: flex; flex-direction: column; gap: 22px;
+}
+.stage { position: relative; min-width: 0; min-height: 0; background: var(--scene); }
+#view { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+h1 { font-family: var(--font-head); font-weight: 600; font-size: 22px; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+.sub { color: var(--muted); margin-top: 4px; font-size: 13px; }
+h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+section { display: flex; flex-direction: column; }
+.parts { display: flex; flex-direction: column; gap: 2px; }
+.part { display: grid; grid-template-columns: 18px 14px 1fr auto; align-items: center; gap: 8px; padding: 6px 4px; border-radius: 4px; cursor: pointer; }
+.part:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.part input { margin: 0; accent-color: var(--accent); }
+.sw { width: 12px; height: 12px; border-radius: 2px; border: 1px solid color-mix(in srgb, var(--fg) 25%, transparent); }
+.sw.grad { background: linear-gradient(90deg, #440154, #3b528b, #21918c, #5ec962, #fde725); }
+.part .meta { font-family: var(--font-data); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.part .name small { display: block; color: var(--muted); font-size: 12px; }
+.check { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: center; padding: 6px 4px; cursor: pointer; }
+.check input { margin: 0; accent-color: var(--accent); }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.slider { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; margin-top: 8px; }
+.slider span { font-family: var(--font-data); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.slider input { grid-column: 1 / -1; }
+.views { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+button {
+  font: inherit; font-size: 13px; color: var(--fg); background: transparent; border: 1px solid var(--line);
+  border-radius: 4px; padding: 7px 6px; cursor: pointer;
+}
+button:hover { border-color: var(--accent); color: var(--accent); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.legend { display: flex; flex-direction: column; gap: 6px; }
+.legend .bar { height: 12px; border-radius: 2px; background: linear-gradient(90deg, #440154, #3b528b, #21918c, #5ec962, #fde725); }
+.legend .ticks { display: flex; justify-content: space-between; font-family: var(--font-data); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.legend p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+td { padding: 5px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.v { text-align: right; font-family: var(--font-data); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 10px; }
+td.flag { color: var(--heat); }
+.note { color: var(--muted); font-size: 13px; line-height: 1.5; margin: 0; }
+.note b { color: var(--fg); font-weight: 500; }
+.hud {
+  position: absolute; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--panel) 92%, transparent); border: 1px solid var(--line); border-radius: 4px;
+  padding: 8px 10px; font-family: var(--font-data); font-size: 12px; line-height: 1.6; font-variant-numeric: tabular-nums;
+  max-width: calc(100% - 24px);
+}
+.hud .k { color: var(--muted); }
+.axes { position: absolute; right: calc(12px + env(safe-area-inset-right, 0px)); top: 12px; font-family: var(--font-data); font-size: 11px; color: var(--muted); text-align: right; line-height: 1.5; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 14px; pointer-events: none; }
+@media (max-width: 820px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: 58vh auto; height: auto; }
+  html, body { height: auto; }
+  .stage { height: 58vh; }
+  .panel { border-right: none; border-top: 1px solid var(--line); overflow: visible; padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+}
+<style>
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.fields button[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--fg); font-weight: 500; }
+.legend .bar { background: none; height: 14px; }
+.legend .ticks { position: relative; height: 14px; display: block; }
+.legend .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.legend .ticks span:first-child { transform: none; }
+.legend .ticks span:last-child { transform: translateX(-100%); }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kpi { border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; }
+.kpi .l { font-size: 12px; color: var(--muted); }
+.kpi .v { font-family: var(--font-data); font-size: 17px; font-weight: 500; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.kpi .t { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.play { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; margin-top: 6px; }
+.play button { padding: 5px 10px; }
+.play span { font-family: var(--font-data); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+</style>
+
+<div class="app">
+  <aside class="panel">
+    <div>
+      <h1>NDCT flow results</h1>
+      <div class="sub" id="sub">Run 01 · dry heat, calm air · English units</div>
+    </div>
+
+    <section>
+      <h2>Headline results</h2>
+      <div class="kpis" id="kpis"></div>
+    </section>
+
+    <section>
+      <h2>Colour by</h2>
+      <div class="fields" id="fields"></div>
+      <div class="legend" style="margin-top:10px">
+        <canvas class="bar" id="bar" width="300" height="14"></canvas>
+        <div class="ticks" id="ticks"></div>
+        <p id="fieldNote"></p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Layers</h2>
+      <div class="parts" id="parts">
+        <label class="part"><input type="checkbox" id="L-streamlines" checked><span class="sw grad"></span><span class="name">Air paths<small>streamlines, with moving dots</small></span><span class="meta" id="n-streamlines">–</span></label>
+        <label class="part"><input type="checkbox" id="L-cutVertical" checked><span class="sw grad"></span><span class="name">Vertical cut<small>through the tower axis</small></span><span class="meta" id="n-cutVertical">–</span></label>
+        <label class="part"><input type="checkbox" id="L-cutInlet"><span class="sw grad"></span><span class="name">Inlet cut<small>horizontal, 16 ft (through the columns)</small></span><span class="meta" id="n-cutInlet">–</span></label>
+        <label class="part"><input type="checkbox" id="L-cutFill"><span class="sw grad"></span><span class="name">Above-fill cut<small>horizontal, 48 ft</small></span><span class="meta" id="n-cutFill">–</span></label>
+        <label class="part"><input type="checkbox" id="L-cutThroat"><span class="sw grad"></span><span class="name">Throat cut<small>horizontal, 378 ft</small></span><span class="meta" id="n-cutThroat">–</span></label>
+        <label class="part"><input type="checkbox" id="L-cutExit"><span class="sw grad"></span><span class="name">Exit cut<small>horizontal, 490 ft (tower top)</small></span><span class="meta" id="n-cutExit">–</span></label>
+        <label class="part"><input type="checkbox" id="L-shell" checked><span class="sw" id="sw-shell"></span><span class="name">Shell<small>concrete wall</small></span><span class="meta"></span></label>
+        <label class="part"><input type="checkbox" id="L-columns" checked><span class="sw" id="sw-columns"></span><span class="name">Columns<small>80 legs</small></span><span class="meta"></span></label>
+        <label class="part"><input type="checkbox" id="L-heat" checked><span class="sw" id="sw-heat"></span><span class="name">Heat zone outline<small>where the fill would be, 39–44 ft</small></span><span class="meta"></span></label>
+      </div>
+    </section>
+
+    <section>
+      <h2>Display</h2>
+      <label class="check"><input type="checkbox" id="clip" checked><span>Cut away the near half of the walls</span></label>
+      <label class="check"><input type="checkbox" id="dots" checked><span>Moving dots on the air paths</span></label>
+      <div class="play"><button id="pause" type="button">Pause</button><input type="range" id="speed" min="0" max="2" step="0.05" value="1" aria-label="Playback speed"><span id="speedv">10×</span></div>
+      <div class="slider"><label for="opac">Shell opacity</label><span id="opval">35%</span><input type="range" id="opac" min="0.1" max="1" step="0.05" value="0.35"></div>
+    </section>
+
+    <section>
+      <h2>Views</h2>
+      <div class="views">
+        <button id="v-iso" type="button">Iso</button>
+        <button id="v-side" type="button">Elevation</button>
+        <button id="v-top" type="button">From above</button>
+        <button id="v-inlet" type="button">Inlet</button>
+        <button id="v-fill" type="button">Above fill</button>
+        <button id="v-exit" type="button">Tower top</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Reading it</h2>
+      <p class="note">Outside air comes in through the <b>16 ft-high inlet ring</b> between the columns, is heated by
+      about 23 °F in the <b>heat zone</b>, and the warm, lighter air rises out of the top as a plume.
+      The dots move at the real air speed, sped up by the playback rate.
+      Click a cut to read all four values at that spot.</p>
+      <p class="note" style="margin-top:8px">Air paths are traced on a 6.6 ft (2 m) grid sampled from the solution, so
+      near the walls they are smoothed. The tower flow number is from the solver's own monitor at the throat.</p>
+    </section>
+  </aside>
+
+  <main class="stage">
+    <canvas id="view" aria-label="3D view of the cooling tower air flow results"></canvas>
+    <div class="axes">z ↑ · origin: tower centre on the ground · feet</div>
+    <div class="hud" id="hud"><span class="k">Click a cut to probe it. Drag to orbit, scroll to zoom, right-drag to pan.</span></div>
+    <div class="loading" id="loading">Loading results…</div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const DATA = "results_web/";
+
+  const canvas = $("view");
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.localClippingEnabled = true;
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(40, 1, 1, 30000);
+  camera.up.set(0, 0, 1);
+  const controls = new THREE.OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.12;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x777777, 0.85));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.55);
+  sun.position.set(500, -900, 1200);
+  scene.add(sun);
+
+  const clipPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);   // keep y >= 0 (default camera looks from -y)
+
+  // ---------------------------------------------------------------- colour maps
+  const MAPS = {
+    heat: [[0.230, 0.299, 0.754], [0.552, 0.690, 0.996], [0.866, 0.866, 0.866], [0.957, 0.604, 0.482], [0.706, 0.016, 0.150]],
+    speed: [[0.190, 0.072, 0.232], [0.276, 0.420, 0.891], [0.158, 0.736, 0.923], [0.197, 0.949, 0.595], [0.644, 0.990, 0.234],
+            [0.951, 0.812, 0.222], [0.977, 0.457, 0.119], [0.796, 0.161, 0.024], [0.480, 0.016, 0.011]],
+    diverge: [[0.085, 0.315, 0.600], [0.400, 0.640, 0.830], [0.965, 0.965, 0.965], [0.950, 0.590, 0.420], [0.700, 0.090, 0.130]],
+  };
+  function ramp(map, t) {
+    const C = MAPS[map];
+    t = Math.min(1, Math.max(0, t)) * (C.length - 1);
+    const i = Math.min(C.length - 2, Math.floor(t)), f = t - i, a = C[i], b = C[i + 1];
+    return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+  }
+  // position on the colour bar; diverging maps put zero in the middle even when the range is lopsided
+  function tOf(F, v) {
+    const [lo, hi] = F.range;
+    if (F.map === "diverge") return v < 0 ? 0.5 - 0.5 * v / lo : 0.5 + 0.5 * v / hi;
+    return (v - lo) / (hi - lo);
+  }
+
+  const NOTES = {
+    dT_F: "How much warmer the air is than still outside air at the same height. Expected rise through the heat zone: 22.7 °F.",
+    speed_fts: "Air speed in any direction. Design speed through the fill: 6.6 ft/s.",
+    up_fts: "Vertical air speed: red = rising, blue = sinking.",
+    draft_inH2O: "Pressure compared with still outside air at the same height. Below zero (blue) inside the tower = the draft that pulls air in.",
+  };
+
+  // ---------------------------------------------------------------- materials
+  const mats = {
+    shell: new THREE.MeshStandardMaterial({ roughness: 0.95, side: THREE.DoubleSide, transparent: true, opacity: 0.35, depthWrite: false }),
+    columns: new THREE.MeshStandardMaterial({ roughness: 0.9, side: THREE.DoubleSide }),
+    ground: new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false }),
+    cut: new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }),
+    line: new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.85 }),
+    dots: new THREE.PointsMaterial({ size: 5, sizeAttenuation: false, vertexColors: false, transparent: true, opacity: 0.95, depthTest: true }),
+    heat: new THREE.LineBasicMaterial({}),
+  };
+  function applyTheme() {
+    scene.background = new THREE.Color(css("--scene"));
+    mats.shell.color.set(css("--concrete"));
+    mats.columns.color.set(css("--column"));
+    mats.ground.color.set(css("--ground"));
+    mats.heat.color.set(css("--heat"));
+    mats.dots.color.set(css("--fg"));
+    $("sw-shell").style.background = css("--concrete");
+    $("sw-columns").style.background = css("--column");
+    $("sw-heat").style.background = css("--heat");
+  }
+  function setClipping() {
+    const c = $("clip").checked ? [clipPlane] : [];
+    ["shell", "columns", "ground"].forEach((k) => { mats[k].clippingPlanes = c; mats[k].needsUpdate = true; });
+  }
+
+  const b64ToBuffer = (t) => { const s = atob(t.trim()), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u.buffer; };
+
+  let manifest = null, fields = [], fieldIdx = 0;
+  const layers = {};     // name -> { info, group, loaded, loading, geom, data:{fields:[Float32Array]} }
+  const pickables = [];
+
+  function recolour(L) {
+    if (!L.loaded || !L.data || !L.data.fields) return;
+    const F = fields[fieldIdx], vals = L.data.fields[fieldIdx], col = L.geom.attributes.color.array;
+    for (let i = 0; i < vals.length; i++) {
+      const c = ramp(F.map, tOf(F, vals[i]));
+      col[3 * i] = c[0]; col[3 * i + 1] = c[1]; col[3 * i + 2] = c[2];
+    }
+    L.geom.attributes.color.needsUpdate = true;
+  }
+
+  function buildCut(L, buf) {
+    const n = L.info.points, nt = L.info.triangles, nf = fields.length;
+    let off = 0;
+    const pos = new Float32Array(buf, off, n * 3); off += n * 12;
+    const fv = [];
+    for (let j = 0; j < nf; j++) { fv.push(new Float32Array(buf, off, n)); off += n * 4; }
+    const tri = new Uint32Array(buf, off, nt * 3);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    g.setAttribute("color", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+    g.setIndex(new THREE.BufferAttribute(tri, 1));
+    g.computeVertexNormals();
+    const mesh = new THREE.Mesh(g, mats.cut);
+    mesh.userData = { layer: L.info.name, label: L.info.label };
+    L.group.add(mesh);
+    L.geom = g; L.data = { fields: fv, mesh };
+    pickables.push(mesh);
+    $("n-" + L.info.name).textContent = n.toLocaleString() + " pts";
+  }
+
+  // streamlines: coloured lines plus dots that move at the real air speed
+  let dots = null;
+  function buildLines(L, buf) {
+    const n = L.info.points, nl = L.info.lines, nf = fields.length;
+    let off = 0;
+    const pos = new Float32Array(buf, off, n * 3); off += n * 12;
+    const fv = [];
+    for (let j = 0; j < nf; j++) { fv.push(new Float32Array(buf, off, n)); off += n * 4; }
+    const tof = new Float32Array(buf, off, n); off += n * 4;
+    const starts = new Uint32Array(buf, off, nl + 1);
+    const idx = [];
+    for (let k = 0; k < nl; k++) for (let i = starts[k]; i < starts[k + 1] - 1; i++) idx.push(i, i + 1);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    g.setAttribute("color", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+    g.setIndex(idx);
+    L.group.add(new THREE.LineSegments(g, mats.line));
+    L.geom = g; L.data = { fields: fv };
+
+    // dots: spaced in travel time along each line, at most 40 per line
+    const parts = [];
+    for (let k = 0; k < nl; k++) {
+      const a = starts[k], b = starts[k + 1] - 1, t0 = tof[a], dur = tof[b] - t0;
+      if (dur <= 0) continue;
+      const gap = Math.max(12, dur / 40);
+      for (let s = 0; s < dur; s += gap) parts.push({ a, b, t0, dur, base: s, gap });
+    }
+    const dp = new Float32Array(parts.length * 3);
+    const dg = new THREE.BufferGeometry();
+    dg.setAttribute("position", new THREE.BufferAttribute(dp, 3));
+    const pts = new THREE.Points(dg, mats.dots);
+    pts.frustumCulled = false;
+    L.group.add(pts);
+    dots = { parts, dg, dp, pos, tof, pts };
+    $("n-streamlines").textContent = nl + " paths";
+  }
+
+  function placeDots(clock) {
+    if (!dots) return;
+    const { parts, dp, pos, tof } = dots;
+    for (let q = 0; q < parts.length; q++) {
+      const P = parts[q];
+      let t = P.base + (clock % P.gap);
+      if (t > P.dur) t -= P.gap;
+      if (t < 0) t = 0;
+      const tt = P.t0 + t;
+      let lo = P.a, hi = P.b;                      // binary search for the segment containing tt
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (tof[m] <= tt) lo = m; else hi = m; }
+      const span = tof[hi] - tof[lo], f = span > 0 ? Math.min(1, Math.max(0, (tt - tof[lo]) / span)) : 0;
+      for (let c = 0; c < 3; c++) dp[3 * q + c] = pos[3 * lo + c] + (pos[3 * hi + c] - pos[3 * lo + c]) * f;
+    }
+    dots.dg.attributes.position.needsUpdate = true;
+  }
+
+  function buildWall(L, buf) {
+    const n = L.info.points, nt = L.info.triangles;
+    const pos = new Float32Array(buf, 0, n * 3), tri = new Uint32Array(buf, n * 12, nt * 3);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    g.setIndex(new THREE.BufferAttribute(tri, 1));
+    g.computeVertexNormals();
+    const m = new THREE.Mesh(g, mats[L.info.name]);
+    m.renderOrder = L.info.name === "shell" ? 2 : 0;
+    L.group.add(m);
+  }
+
+  function load(name) {
+    const L = layers[name];
+    if (!L || L.loaded || L.loading) return Promise.resolve();
+    L.loading = true;
+    const tag = $("n-" + name);
+    if (tag) tag.textContent = "loading…";
+    return fetch(DATA + name + ".b64.txt")
+      .then((r) => { if (!r.ok) throw new Error(name + " (" + r.status + ")"); return r.text(); })
+      .then((t) => {
+        const buf = b64ToBuffer(t), k = L.info.kind;
+        if (k === "cut") buildCut(L, buf); else if (k === "lines") buildLines(L, buf); else buildWall(L, buf);
+        L.loaded = true;
+        recolour(L);
+      })
+      .catch((e) => { if (tag) tag.textContent = "failed"; console.error(e); });
+  }
+
+  function toggle(name) {
+    const on = $("L-" + name).checked;
+    layers[name].group.visible = on;
+    if (on) load(name);
+  }
+
+  // ---------------------------------------------------------------- field buttons and legend
+  function fmt(v, F) { const d = F.unit === "in H2O" ? 2 : 0; return (Math.abs(v) < 1e-9 ? 0 : v).toFixed(d); }
+  function drawLegend() {
+    const F = fields[fieldIdx], c = $("bar"), x = c.getContext("2d");
+    for (let i = 0; i < c.width; i++) {
+      const t = i / (c.width - 1);
+      const v = F.map === "diverge" ? (t < 0.5 ? F.range[0] * (1 - 2 * t) : F.range[1] * (2 * t - 1)) : F.range[0] + t * (F.range[1] - F.range[0]);
+      const col = ramp(F.map, tOf(F, v));
+      x.fillStyle = `rgb(${col.map((u) => Math.round(u * 255)).join(",")})`;
+      x.fillRect(i, 0, 1, c.height);
+    }
+    let ticks;
+    if (F.map === "diverge") ticks = [[0, F.range[0]], [25, F.range[0] / 2], [50, 0], [75, F.range[1] / 2], [100, F.range[1]]];
+    else ticks = [0, 25, 50, 75, 100].map((p) => [p, F.range[0] + (p / 100) * (F.range[1] - F.range[0])]);
+    $("ticks").innerHTML = ticks.map(([p, v], i) => `<span style="left:${p}%">${fmt(v, F)}${i === ticks.length - 1 ? " " + (F.unit === "F" ? "°F" : F.unit) : ""}</span>`).join("");
+    $("fieldNote").textContent = NOTES[F.name] || "";
+    [...$("fields").children].forEach((b, i) => b.setAttribute("aria-pressed", i === fieldIdx ? "true" : "false"));
+  }
+  function setField(i) {
+    fieldIdx = i;
+    drawLegend();
+    Object.values(layers).forEach(recolour);
+  }
+
+  // ---------------------------------------------------------------- headline numbers
+  function fillKpis(m) {
+    const s = m.summary || {}, d = m.design || {};
+    const k = [
+      ["Air through the tower", s.throat_flow_lb_min ? Math.round(s.throat_flow_lb_min).toLocaleString() : "–", "lb/min", s.throat_flow_lb_min ? Math.round(100 * s.throat_flow_lb_min / d.flow_lb_min) + "% of design " + d.flow_lb_min.toLocaleString() : ""],
+      ["Speed through the fill", s.fill_velocity_fts != null ? s.fill_velocity_fts.toFixed(2) : "–", "ft/s", "target " + d.fill_fts],
+      ["Temperature rise at exit", s.exit_rise_F != null ? s.exit_rise_F.toFixed(1) : "–", "°F", "expected " + d.rise_F + " (heat balance closes)"],
+      ["Draft (inside vs outside)", "0.29–0.31", "in H2O", "estimate " + d.draft_inH2O],
+    ];
+    $("kpis").innerHTML = k.map(([l, v, u, t]) => `<div class="kpi"><div class="l">${l}</div><div class="v">${v} <small style="font-size:12px;color:var(--muted)">${u}</small></div><div class="t">${t}</div></div>`).join("");
+    $("sub").textContent = m.run.replace(/_/g, " ") + " · iteration " + Math.round(m.iteration).toLocaleString() + " · English units";
+  }
+
+  // ---------------------------------------------------------------- scenery: ground disk and heat-zone rings
+  function ground(r) {
+    const g = new THREE.Mesh(new THREE.CircleGeometry(r, 96), mats.ground);
+    g.position.z = -0.3;
+    return g;
+  }
+  function heatOutline(hz) {
+    const g = new THREE.Group();
+    [hz.z0, hz.z1].forEach((z) => {
+      const pts = [];
+      for (let i = 0; i <= 160; i++) { const a = (i / 160) * Math.PI * 2; pts.push(new THREE.Vector3(hz.radius * Math.cos(a), hz.radius * Math.sin(a), z)); }
+      g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mats.heat));
+    });
+    return g;
+  }
+
+  // ---------------------------------------------------------------- views
+  const views = {
+    iso: [[-900, -1250, 750], [0, 0, 330]],
+    side: [[0, -2100, 420], [0, 0, 420]],
+    top: [[0, -60, 1900], [0, 0, 0]],
+    inlet: [[-150, -330, 110], [-30, -150, 20]],
+    fill: [[0, -330, 330], [0, 0, 45]],
+    exit: [[-280, -420, 780], [0, 0, 490]],
+  };
+  const needs = { inlet: "cutInlet", fill: "cutFill", exit: "cutExit" };
+  function go(k) { const [p, t] = views[k]; camera.position.set(...p); controls.target.set(...t); controls.update(); }
+  Object.keys(views).forEach((k) => $("v-" + k).addEventListener("click", () => {
+    const n = needs[k];
+    if (n && !$("L-" + n).checked) { $("L-" + n).checked = true; toggle(n); }
+    go(k);
+  }));
+
+  // ---------------------------------------------------------------- probe
+  const ray = new THREE.Raycaster();
+  let down = null;
+  canvas.addEventListener("pointerdown", (e) => { down = [e.clientX, e.clientY]; });
+  canvas.addEventListener("pointerup", (e) => {
+    if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
+    const r = canvas.getBoundingClientRect();
+    ray.setFromCamera({ x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1 }, camera);
+    const hits = ray.intersectObjects(pickables.filter((m) => m.parent.visible), false);
+    const hud = $("hud");
+    if (!hits.length) { hud.innerHTML = '<span class="k">No cut there. Turn on a cut and click on it.</span>'; return; }
+    const h = hits[0], p = h.point, L = layers[h.object.userData.layer];
+    // barycentric interpolation of each field inside the clicked triangle
+    const P = h.object.geometry.attributes.position, A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3();
+    A.fromBufferAttribute(P, h.face.a); B.fromBufferAttribute(P, h.face.b); C.fromBufferAttribute(P, h.face.c);
+    const w = new THREE.Vector3();
+    THREE.Triangle.getBarycoord(p, A, B, C, w);
+    const rows = fields.map((F, j) => {
+      const v = L.data.fields[j], val = v[h.face.a] * w.x + v[h.face.b] * w.y + v[h.face.c] * w.z;
+      const u = F.unit === "F" ? "°F" : F.unit;
+      return `<span class="k">${F.label.toLowerCase()}</span> ${val.toFixed(F.unit === "in H2O" ? 3 : 1)} ${u}`;
+    });
+    hud.innerHTML = `<b>${h.object.userData.label}</b><br>` +
+      `<span class="k">height</span> ${p.z.toFixed(0)} ft <span class="k">· radius from axis</span> ${Math.hypot(p.x, p.y).toFixed(0)} ft<br>` + rows.join("<br>");
+  });
+
+  // ---------------------------------------------------------------- controls
+  $("clip").addEventListener("change", setClipping);
+  $("dots").addEventListener("change", () => { if (dots) dots.pts.visible = $("dots").checked; });
+  $("opac").addEventListener("input", (e) => {
+    const v = parseFloat(e.target.value);
+    mats.shell.opacity = v; mats.shell.transparent = v < 1; mats.shell.depthWrite = v >= 1; mats.shell.needsUpdate = true;
+    $("opval").textContent = Math.round(v * 100) + "%";
+  });
+  let playing = true, rate = 10;
+  $("pause").addEventListener("click", () => { playing = !playing; $("pause").textContent = playing ? "Pause" : "Play"; });
+  $("speed").addEventListener("input", (e) => { rate = Math.round(Math.pow(10, parseFloat(e.target.value))); $("speedv").textContent = rate + "×"; });
+
+  function resize() {
+    const r = canvas.parentElement.getBoundingClientRect();
+    renderer.setSize(r.width, r.height, false);
+    camera.aspect = r.width / Math.max(1, r.height);
+    camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(canvas.parentElement);
+  resize();
+  applyTheme();
+  setClipping();
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
+  new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  go("iso");
+  let clock = 0, last = performance.now();
+  (function loop(now) {
+    now = now || performance.now();
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (playing) clock += dt * rate;
+    if (dots && dots.pts.visible && layers.streamlines.group.visible) placeDots(clock);
+    controls.update();
+    renderer.render(scene, camera);
+    requestAnimationFrame(loop);
+  })();
+
+  fetch(DATA + "manifest.json").then((r) => r.json()).then((m) => {
+    manifest = m;
+    fields = m.fields;
+    $("fields").innerHTML = fields.map((F, i) => `<button type="button" data-i="${i}">${F.label}</button>`).join("");
+    [...$("fields").children].forEach((b) => b.addEventListener("click", () => setField(+b.dataset.i)));
+    drawLegend();
+    fillKpis(m);
+    scene.add(ground(1250));
+    const hz = heatOutline(m.heatZone_ft);
+    scene.add(hz);
+    $("L-heat").addEventListener("change", () => { hz.visible = $("L-heat").checked; });
+    m.layers.forEach((info) => {
+      const group = new THREE.Group();
+      scene.add(group);
+      layers[info.name] = { info, group, loaded: false };
+      const cb = $("L-" + info.name);
+      if (cb) { cb.addEventListener("change", () => toggle(info.name)); group.visible = cb.checked; }
+    });
+    return Promise.all(Object.keys(layers).filter((n) => $("L-" + n) && $("L-" + n).checked).map(load));
+  }).then(() => { $("loading").hidden = true; })
+    .catch((e) => { $("loading").textContent = "Could not load the results files: " + e.message; });
+})();
+</script>
