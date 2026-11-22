@@ -14,7 +14,7 @@ const fmt = (v, d) => (v == null || Number.isNaN(v) ? "–" : v.toFixed(d));
 const pct = (a, b) => (b ? `${a >= b ? "+" : "−"}${Math.abs((100 * (a - b)) / b).toFixed(1)} %` : "");
 
 let D, FI;                          // page data, field index
-const state = { i: 3, view: "full", colour: "speed", smokeBg: "dark", polarTab: "cl", surfTab: "cp", convTab: "cl", gridTab: "0" };
+const state = { i: 3, view: "full", colour: "speed", smokeBg: "dark", smokeTool: "wand", polarTab: "cl", surfTab: "cp", convTab: "cl", gridTab: "0" };
 const listeners = [];
 const onAngle = (f) => listeners.push(f);
 function setAngle(i) {
@@ -399,6 +399,10 @@ function tunnel() {
   const evXY = (ev) => { const r = cv.getBoundingClientRect(), v = box();
     return [v.x[0] + ((ev.clientX - r.left) / r.width) * (v.x[1] - v.x[0]), v.y[1] - ((ev.clientY - r.top) / r.height) * (v.y[1] - v.y[0])]; };
   const ok = (x, y) => F && !Number.isNaN(sampleField(F, F.ux, x, y));
+  const RAKE_N = 15, RAKE_SPAN = 0.5;          // rake: 15 nozzles over half a chord, like a wind-tunnel smoke rake
+  const nozzles = () => state.smokeTool === "rake"
+    ? Array.from({ length: RAKE_N }, (_, k) => [wand.x, wand.y + (k / (RAKE_N - 1) - 0.5) * RAKE_SPAN]) : [[wand.x, wand.y]];
+  const okHandle = (x, y) => (state.smokeTool === "rake" ? F && x > box().x[0] && x < box().x[1] && y > box().y[0] && y < box().y[1] : ok(x, y));
   function size() {
     const v = box(), dpr = Math.min(window.devicePixelRatio || 1, 2), w = wrap.clientWidth;
     cv.width = Math.round(w * dpr); cv.height = Math.round(w * ((v.y[1] - v.y[0]) / (v.x[1] - v.x[0])) * dpr);
@@ -415,10 +419,10 @@ function tunnel() {
   }
   function step() {                          // emit at the wand, move every puff with the local velocity (RK2)
     const v = box(), w = v.x[1] - v.x[0], dt = 0.0025 * w, jit = 0.003 * w;
-    if (wand) for (let k = 0; k < 4; k++) {
-      const x = wand.x + (Math.random() - 0.5) * jit, y = wand.y + (Math.random() - 0.5) * jit;
-      if (ok(x, y)) puffs.push({ x, y, age: 0 });
-    }
+    if (wand) { const ns = nozzles(), per = ns.length > 1 ? 1 : 4;    // a rake puts out one puff per nozzle per step
+      ns.forEach(([nx, ny]) => { for (let k = 0; k < per; k++) {
+        const x = nx + (Math.random() - 0.5) * jit, y = ny + (Math.random() - 0.5) * jit;
+        if (ok(x, y)) puffs.push({ x, y, age: 0 }); } }); }
     const keep = [];
     for (const q of puffs) {
       const u1 = sampleField(F, F.ux, q.x, q.y), w1 = sampleField(F, F.uy, q.x, q.y); if (Number.isNaN(u1)) continue;
@@ -427,7 +431,7 @@ function tunnel() {
       q.x += dt * u2; q.y += dt * w2;
       if (++q.age < AGE) keep.push(q);
     }
-    puffs = keep.length > 8000 ? keep.slice(keep.length - 8000) : keep;
+    puffs = keep.length > 9000 ? keep.slice(keep.length - 9000) : keep;
   }
   function draw() {
     ctx.fillStyle = "#000"; ctx.fillRect(0, 0, cv.width, cv.height);
@@ -443,7 +447,15 @@ function tunnel() {
     ctx.fillStyle = "#1c1c21"; ctx.strokeStyle = "#d9dee8"; ctx.lineWidth = Math.max(1.2, cv.width / 700);
     ctx.beginPath(); OUTLINE.forEach((p, k) => { const [a, b] = toPx(...toWind(p[0], p[1])); k ? ctx.lineTo(a, b) : ctx.moveTo(a, b); });
     ctx.closePath(); ctx.fill(); ctx.stroke();
-    if (wand) {                                // the wand
+    if (wand && state.smokeTool === "rake") {  // the rake: a bar with nozzles, handle in the middle
+      const ns = nozzles().map((p) => toPx(p[0], p[1])), r = Math.max(3, cv.width / 330);
+      ctx.lineCap = "round";
+      [["#000", Math.max(6, cv.width / 220)], [C.exp, Math.max(3, cv.width / 420)]].forEach(([col, lw]) => {
+        ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(...ns[0]); ctx.lineTo(...ns[ns.length - 1]); ctx.stroke(); });
+      ctx.lineCap = "butt"; ctx.fillStyle = C.exp;
+      ns.forEach(([a, c]) => { ctx.beginPath(); ctx.arc(a, c, r, 0, 7); ctx.fill(); });
+      const [ha, hc] = toPx(wand.x, wand.y); ctx.beginPath(); ctx.arc(ha, hc, r * 2, 0, 7); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = "#000"; ctx.stroke();
+    } else if (wand) {                         // the wand
       const [a, c] = toPx(wand.x, wand.y), L = Math.max(30, cv.width / 22), r = Math.max(6, cv.width / 170);
       ctx.lineCap = "round"; ctx.strokeStyle = "#000"; ctx.lineWidth = Math.max(5, cv.width / 250);
       ctx.beginPath(); ctx.moveTo(a - L, c + L * 0.6); ctx.lineTo(a, c); ctx.stroke();
@@ -467,20 +479,27 @@ function tunnel() {
     F = await loadField(D.runs[state.i].alpha, "full");
     size(); paintBg();
     if (!wand) resetWand();
-    if (!ok(wand.x, wand.y)) resetWand();       // the airfoil pitched onto the wand
+    if (!okHandle(wand.x, wand.y)) resetWand(); // the airfoil pitched onto the wand
     draw(); start();
   }
+  let grab = [0, 0];                           // offset between the pointer and the handle while dragging
   cv.addEventListener("pointerdown", (ev) => {
-    const [x, y] = evXY(ev); if (!ok(x, y)) return;
-    wand = { x, y }; moving = true; cv.setPointerCapture(ev.pointerId); cv.style.cursor = "grabbing"; ev.preventDefault();
+    const [x, y] = evXY(ev); if (!okHandle(x, y)) return;
+    const onRake = state.smokeTool === "rake" && Math.abs(x - wand.x) < 0.04 && Math.abs(y - wand.y) < RAKE_SPAN / 2 + 0.03;
+    grab = onRake ? [wand.x - x, wand.y - y] : [0, 0];
+    if (!onRake) wand = { x, y };
+    moving = true; cv.setPointerCapture(ev.pointerId); cv.style.cursor = "grabbing"; ev.preventDefault();
   });
-  cv.addEventListener("pointermove", (ev) => { if (!moving) return; const [x, y] = evXY(ev); if (ok(x, y)) wand = { x, y }; });
+  cv.addEventListener("pointermove", (ev) => {
+    if (!moving) return; const [x, y] = evXY(ev), nx = x + grab[0], ny = y + grab[1]; if (okHandle(nx, ny)) wand = { x: nx, y: ny }; });
   const up = (ev) => { if (!moving) return; moving = false; cv.style.cursor = ""; try { cv.releasePointerCapture(ev.pointerId); } catch (e) { /* released */ } };
   cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
   $("smokeReset").addEventListener("click", () => { puffs = []; resetWand(); });
   $("smokeAngles").innerHTML = D.runs.map((r, k) => `<button data-k="${k}">${r.alpha}°</button>`).join("");
   $("smokeAngles").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => setAngle(+b.dataset.k)));
   tabs("smokeBgSeg", "smokeBg", () => { paintBg(); draw(); });
+  tabs("smokeToolSeg", "smokeTool", () => { puffs = []; resetWand();
+    $("smokeHint").textContent = state.smokeTool === "rake" ? "drag the rake anywhere, or click to move it there" : "drag the orange wand anywhere"; });
   onAngle(() => { $("smokeAngles").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", +b.dataset.k === state.i)); refresh(); });
   new IntersectionObserver((es) => { onScreen = es[0].isIntersecting; start(); }).observe(cv);   // animate only while visible
   window.addEventListener("resize", () => { clearTimeout(window._st); window._st = setTimeout(() => { size(); paintBg(); draw(); }, 150); });

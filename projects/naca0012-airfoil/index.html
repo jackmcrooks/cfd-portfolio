@@ -146,17 +146,19 @@
   <!-- 3b. Smoke tunnel -->
   <section style="padding-top:0" id="smoke-tunnel">
     <h2>Smoke tunnel</h2>
-    <p class="muted" style="font-size:0.9rem;margin-top:-4px">A smoke wand, as in a wind tunnel. Drag it anywhere in the flow (or tap to move it)
+    <p class="muted" style="font-size:0.9rem;margin-top:-4px">A smoke wand or a rake of 15 nozzles, as in a wind tunnel. Drag it anywhere in the flow (or tap to move it)
       and watch the smoke follow the computed velocity field: it splits at the stagnation point, speeds over the top and lags under the bottom.</p>
     <div class="panel">
       <div class="toolrow">
         <div><span class="toollbl">Angle</span><span class="seg" id="smokeAngles"></span></div>
+        <div><span class="toollbl">Smoke</span><span class="seg" id="smokeToolSeg">
+          <button data-t="wand" aria-pressed="true">Wand</button><button data-t="rake">Rake</button></span></div>
         <div><span class="toollbl">Background</span><span class="seg" id="smokeBgSeg">
           <button data-t="dark" aria-pressed="true">Dark</button><button data-t="speed">Speed</button></span></div>
-        <button class="btn" id="smokeReset">Reset wand</button>
+        <button class="btn" id="smokeReset">Reset</button>
       </div>
       <div class="flow-wrap" id="smokeWrap"><canvas id="smoke" style="cursor:grab"></canvas>
-        <div class="hint">drag the orange wand anywhere</div></div>
+        <div class="hint" id="smokeHint">drag the orange wand anywhere</div></div>
     </div>
   </section>
 
@@ -301,6 +303,6 @@
 
 <footer><div class="wrap">© Jack Crooks · Hosted on GitHub Pages</div></footer>
 
-<script type="module" src="airfoil.js?v=19"></script>
+<script type="module" src="airfoil.js?v=20"></script>
 </body>
 </html>
