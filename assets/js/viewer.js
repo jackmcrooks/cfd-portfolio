@@ -9,6 +9,7 @@
 //    data-up       "z" (OpenFOAM / ParaView default) or "y"
 //    data-flow     "+x" draws a flow-direction arrow along +x  (or "none")
 //    data-mini     "true" = small auto-spinning preview with no buttons
+//    data-spin     "true" = full viewer that starts spinning (Spin button stops it)
 //    data-missing  message shown if the model file isn't there yet
 //    data-zoom     >1 starts the camera further out (default 1)
 //    data-streamlines  velocity-grid .json -> adds the interactive streamline tool
@@ -25,6 +26,7 @@ export function initViewer(el) {
   const mini = el.dataset.mini === "true";
   const up = (el.dataset.up || "z").toLowerCase();
   const flow = el.dataset.flow || "+x";
+  const spin0 = mini || el.dataset.spin === "true";   // data-spin="true": full viewer starts spinning
 
   // ---- renderer, scene, camera ----
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
@@ -45,7 +47,7 @@ export function initViewer(el) {
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.autoRotate = mini;
+  controls.autoRotate = spin0;
   controls.autoRotateSpeed = mini ? 1.2 : 0.8;
   if (mini) { controls.enableZoom = false; controls.enablePan = false; }
 
@@ -57,13 +59,13 @@ export function initViewer(el) {
   let slStarted = false;
 
   // ---- toolbar ----
-  const state = { wire: false, spin: mini, helpers: true };
+  const state = { wire: false, spin: spin0, helpers: true };
   if (!mini) {
     const bar = document.createElement("div");
     bar.className = "toolbar";
     bar.innerHTML = `
       <button data-act="reset">Reset view</button>
-      <button data-act="spin" aria-pressed="false">Spin</button>
+      <button data-act="spin" aria-pressed="${spin0}">Spin</button>
       <button data-act="wire" aria-pressed="false">Wireframe</button>
       <button data-act="helpers" aria-pressed="true">Ground + flow</button>
       <button data-act="shot">Screenshot</button>`;
