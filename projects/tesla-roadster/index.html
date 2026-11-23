@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roadster Road vs Race Aero · Jack Crooks</title>
+  <meta name="description" content="OpenFOAM external aerodynamics of a roadster at 150 mph in two configurations: rear wing stowed (road) and raised (race). Drag, lift, downforce and balance.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=2">
+  <script type="importmap">
+    { "imports": {
+        "three": "../../assets/vendor/three/build/three.module.min.js",
+        "three/addons/": "../../assets/vendor/three/addons/" } }
+  </script>
+  <style>
+    figure { margin: 0; }
+    figure img { display: block; width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--line); background: #fff; }
+    figcaption { color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
+    .figs { display: grid; gap: 20px; grid-template-columns: 1fr 1fr; }
+    .good { color: #57c785; }
+    .cost { color: #e6b450; }
+    .explore { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
+    .explore a.panel { display: block; text-decoration: none; color: inherit; transition: border-color 0.15s; }
+    .explore a.panel:hover { border-color: var(--muted); }
+    .explore img { display: block; width: 100%; height: auto; border-radius: 6px; margin-bottom: 12px; background: #fff; }
+    .explore h3 { margin: 0 0 6px; }
+    .explore p { margin: 0; color: var(--text-2); font-size: 0.92rem; }
+    .phases { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); }
+    .phases .panel h3 { margin: 6px 0 8px; }
+    .phases .panel p { margin: 0; color: var(--text-2); font-size: 0.92rem; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    @media (max-width: 760px) { .figs, .explore, .phases { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../../index.html">JACK CROOKS <span>/ CFD</span></a>
+    <nav class="nav"><a href="../../index.html#projects">All projects</a></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section style="padding-top:48px">
+    <div class="eyebrow">OpenFOAM · External aero · Automotive</div>
+    <h1 style="font-size:2.6rem">Roadster Aero: Road vs Race</h1>
+    <p class="lede">An electric roadster at 150 mph in two configurations: the rear wing stowed flush with the deck (road) and
+      raised to 12° with a leading-edge slat (race). Same mesh rules, same solver, one change. Raising the wing turns
+      <strong>218 lbf of lift into 448 lbf of downforce</strong>, and costs <strong>232 lbf of drag</strong>.</p>
+    <span class="status wip">In progress · road and race runs done</span>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="stats">
+      <div class="stat"><div class="label">Race downforce at 150 mph</div><div class="value">448<span class="unit">lbf</span></div><div class="note">Road car makes 218 lbf of lift</div></div>
+      <div class="stat"><div class="label">Drag cost of the wing</div><div class="value">+232<span class="unit">lbf</span></div><div class="note">437 → 669 lbf, 175 → 268 hp</div></div>
+      <div class="stat"><div class="label">Drag coefficient</div><div class="value">0.372<span class="unit">road</span></div><div class="note">0.532 race (on its larger frontal area)</div></div>
+      <div class="stat"><div class="label">Wing lift-to-drag</div><div class="value">≈ 6</div><div class="note">557 lbf down for 93 lbf of its own drag</div></div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <h2>The car (race configuration)</h2>
+    <div class="viewer" data-model="models/roadster_race.glb" data-up="z" data-flow="+x" data-spin="true"></div>
+    <p class="muted" style="font-size:0.85rem;margin-top:8px">The race geometry as meshed: 14.4 ft long, 6.5 ft wide, 3.8 ft tall, 9.27 ft
+      wheelbase, rear wing (orange) raised on two linkages with a slat 0.75 in ahead of the main element. My own approximate model built
+      from published dimensions and photos, not manufacturer CAD. Drag to rotate, scroll to zoom.</p>
+  </section>
+
+  <section style="padding-top:0">
+    <h2>Explore the results in 3D</h2>
+    <p class="muted" style="font-size:0.9rem;margin-top:-4px">Each run has a full results page: surface pressure on the car in 3D,
+      a <strong>smoke wand or rake you can drag anywhere in the flow</strong> (puffs ride the computed velocity field), the force
+      breakdown by part, convergence history and flow pictures.</p>
+    <div class="explore">
+      <a class="panel" href="explorer/road/index.html">
+        <img src="images/road_Cp_surface_front.jpg" alt="Road configuration coloured by surface pressure, seen from the front" loading="lazy">
+        <h3>Road: wing stowed →</h3>
+        <p>Cd 0.372 · lift +218 lbf (151 front, 67 rear) · 2.23 M cells</p>
+      </a>
+      <a class="panel" href="explorer/race/index.html">
+        <img src="images/race_Cp_surface_rear.jpg" alt="Race configuration coloured by surface pressure, seen from the rear, wing raised" loading="lazy">
+        <h3>Race: wing up →</h3>
+        <p>Cd 0.532 · downforce 448 lbf (front +290 up, rear 737 down) · 3.63 M cells, with road comparison</p>
+      </a>
+    </div>
+  </section>
+
+  <section class="two-col">
+    <div class="panel">
+      <h2>Road vs race at 150 mph</h2>
+      <table>
+        <tr><th>Full car</th><th class="num">Road</th><th class="num">Race</th><th class="num">Change</th></tr>
+        <tr><td>Drag coefficient Cd</td><td class="num">0.372</td><td class="num">0.532</td><td class="num cost">+0.160</td></tr>
+        <tr><td>Frontal area</td><td class="num">20.74 ft²</td><td class="num">22.24 ft²</td><td class="num">+7 %</td></tr>
+        <tr><td>Drag area CdA</td><td class="num">7.72 ft²</td><td class="num">11.82 ft²</td><td class="num cost">+53 %</td></tr>
+        <tr><td>Drag</td><td class="num">437 lbf</td><td class="num">669 lbf</td><td class="num cost">+232 lbf</td></tr>
+        <tr><td>Power to overcome drag</td><td class="num">175 hp</td><td class="num">268 hp</td><td class="num cost">+93 hp</td></tr>
+        <tr><td>Lift (+) / downforce (−)</td><td class="num">+218 lbf</td><td class="num">−448 lbf</td><td class="num good">666 lbf swing</td></tr>
+        <tr><td>Front axle</td><td class="num">+151 lbf</td><td class="num">+290 lbf</td><td class="num cost">more lift</td></tr>
+        <tr><td>Rear axle</td><td class="num">+67 lbf</td><td class="num">−737 lbf</td><td class="num good">804 lbf more down</td></tr>
+      </table>
+      <p class="muted" style="font-size:0.85rem;margin:12px 0 0">Averages over iterations 1600–2500 of each steady run; the two halves of
+        that window agree within 0.7 % for drag. Coefficients use each configuration's own frontal area, so compare the forces in lbf.</p>
+    </div>
+    <div class="panel">
+      <h2>Where the extra drag comes from</h2>
+      <table>
+        <tr><th>Part</th><th class="num">Road drag</th><th class="num">Race drag</th><th class="num">Change</th></tr>
+        <tr><td>Body</td><td class="num">242 lbf</td><td class="num">366 lbf</td><td class="num cost">+124 lbf</td></tr>
+        <tr><td>Wing, slat, linkages</td><td class="num">–</td><td class="num">93 lbf</td><td class="num cost">+93 lbf</td></tr>
+        <tr><td>Tyres</td><td class="num">193 lbf</td><td class="num">205 lbf</td><td class="num">+12 lbf</td></tr>
+        <tr><td>Exhaust nozzles, rest</td><td class="num">2 lbf</td><td class="num">5 lbf</td><td class="num">+3 lbf</td></tr>
+      </table>
+      <p class="muted" style="font-size:0.85rem;margin:12px 0 0">The wing is efficient on its own: about 557 lbf of downforce for 93 lbf of
+        drag. More than half the drag penalty shows up on the <em>body</em>: the open wing bay, and the wing turning the flow
+        over the rear deck and base, raise the body's own drag by half. In the road car, the exposed tyres are 44 % of all drag.</p>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <h2>The flow</h2>
+    <div class="figs">
+      <figure>
+        <img src="images/road_U_midplane.jpg" alt="Road configuration: velocity on the centreline, smooth flow over the deck and a compact wake" loading="lazy">
+        <figcaption><b>Road</b>, velocity on the centreline (mph). Air speeds up over the windscreen and roof, then separates at the
+          squared-off tail into a compact wake.</figcaption>
+      </figure>
+      <figure>
+        <img src="images/race_U_midplane.jpg" alt="Race configuration: velocity on the centreline, fast flow under the raised wing and a taller wake" loading="lazy">
+        <figcaption><b>Race</b>, same plane. Fast air under the raised wing and slat, a slow pocket on its top surface, and a wake
+          pushed upward: the downwash that makes the downforce, and the drag that comes with it.</figcaption>
+      </figure>
+      <figure>
+        <img src="images/road_Cp0_wake.jpg" alt="Road configuration: total pressure loss in a plane behind the car, two lobes from the rear tyres and body" loading="lazy">
+        <figcaption><b>Road</b>, total-pressure loss 1.6 ft behind the tail (0 = all the energy lost). The wake is the body plus the
+          two rear-tyre lobes at the bottom corners.</figcaption>
+      </figure>
+      <figure>
+        <img src="images/race_Cp0_wake.jpg" alt="Race configuration: total pressure loss behind the car, with an added band and tip vortices from the wing" loading="lazy">
+        <figcaption><b>Race</b>, same plane. A loss band from the wing sits on top of the body wake, with a vortex at each wing tip.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="two-col">
+    <div class="panel">
+      <h2>Setup</h2>
+      <table>
+        <tr><td>Speed</td><td>150 mph (67.06 m/s), Mach 0.2, Reynolds number about 13 million on the wheelbase</td></tr>
+        <tr><td>Geometry</td><td>One STL per configuration, one surface per part (body, tyres, wing, slat, linkages, nozzles).
+          Road: wing blended into the deck so nothing is left to mesh in the gap. Tyres sit on small contact plinths to avoid skewed cells at the contact patch</td></tr>
+        <tr><td>Domain</td><td>Half model with a symmetry plane; 3 car lengths ahead, 6 behind, 4 car heights to the side and top (3.4 % blockage)</td></tr>
+        <tr><td>Ground and tyres</td><td>Rolling road at free-stream speed, tyres turning about their axles (moving-wall boundary conditions)</td></tr>
+        <tr><td>Mesh</td><td>snappyHexMesh: 0.4 in cells on the car, 0.2 in on creases and tyres, 0.1 in on the wing (to resolve the 0.75 in slot),
+          4 prism layers. Road 2.23 M cells, race 3.63 M</td></tr>
+        <tr><td>Solver</td><td>simpleFoam (steady, incompressible), k-ω SST with wall functions (average y+ about 130 on the body)</td></tr>
+        <tr><td>Run</td><td>2500 iterations on 4 cores of an M4 MacBook Air: road 2 h 13 min, race 4 h 01 min</td></tr>
+      </table>
+      <p class="muted" style="font-size:0.85rem;margin:12px 0 0">The setup is copied from my NASCAR truck and Ahmed body cases; the Ahmed body
+        run matched wind-tunnel drag. There is no published data for this car to validate against, so read these as a consistent
+        comparison between the two configurations rather than absolute numbers.</p>
+    </div>
+    <div class="panel">
+      <h2>What I learned</h2>
+      <ul class="clean">
+        <li>A wing's cost is not just its own drag. Here the body's drag rose more than the wing's own drag, because the wing changes
+          the pressure on the deck and base behind and below it.</li>
+        <li>Downforce at the back pitches the balance: the raised wing put 737 lbf on the rear axle and <em>raised</em> front lift from
+          151 to 290 lbf. A real race setup needs front downforce (splitter, dive planes) or less wing.</li>
+        <li>Small gaps drive the mesh. The 0.75 in slot between slat and wing needed 0.1 in cells, which took the race mesh from about
+          2 M to 3.6 M cells and nearly doubled the run time.</li>
+        <li>On a low, smooth car the tyres are a big share of drag (44 % here). Rolling road and turning tyres are worth the setup effort.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <h2>Roadmap</h2>
+    <div class="phases">
+      <div class="panel"><span class="status done">Done</span><h3>Road and race at 150 mph</h3><p>Two configurations, one change. Forces, balance, flow pictures, 3D results with a smoke probe.</p></div>
+      <div class="panel"><span class="status planned">Next</span><h3>Balance the race car</h3><p>Lower wing angle or front downforce (splitter) to bring the front axle back toward zero lift.</p></div>
+      <div class="panel"><span class="status planned">Planned</span><h3>Mesh check</h3><p>Coarser and finer meshes on the race car, to put an error band on the drag and downforce.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <a class="back" href="../../index.html#projects">← All projects</a>
+  </section>
+</main>
+
+<footer><div class="wrap">© Jack Crooks · Built with three.js · Hosted on GitHub Pages</div></footer>
+
+<script type="module" src="../../assets/js/viewer.js"></script>
+<script src="../../assets/js/lightbox.js" defer></script>
+</body>
+</html>
