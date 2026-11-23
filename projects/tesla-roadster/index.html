@@ -27,10 +27,11 @@
     .explore h3 { margin: 0 0 6px; }
     .explore p { margin: 0; color: var(--text-2); font-size: 0.92rem; }
     .phases { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); }
+    .tunnel { width: 100%; height: 660px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); display: block; }
     .phases .panel h3 { margin: 6px 0 8px; }
     .phases .panel p { margin: 0; color: var(--text-2); font-size: 0.92rem; }
     td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    @media (max-width: 760px) { .figs, .explore, .phases { grid-template-columns: 1fr; } }
+    @media (max-width: 760px) { .figs, .explore, .phases { grid-template-columns: 1fr; } .tunnel { height: 1250px; } }
   </style>
 </head>
 <body>
@@ -67,6 +68,16 @@
     <p class="muted" style="font-size:0.85rem;margin-top:8px">The race geometry as meshed: 14.4 ft long, 6.5 ft wide, 3.8 ft tall, 9.27 ft
       wheelbase, rear wing (orange) raised on two linkages with a slat 0.75 in ahead of the main element. My own approximate model built
       from published dimensions and photos, not manufacturer CAD. Drag to rotate, scroll to zoom.</p>
+  </section>
+
+  <section style="padding-top:0" id="smoke-tunnel">
+    <h2>Smoke tunnel: flip the wing</h2>
+    <p class="muted" style="font-size:0.9rem;margin-top:-4px">Raise or lower the rear wing and the car and its whole computed flow field
+      switch between the two runs. Drag the orange smoke rake (or a single wand) anywhere and watch the flow over the deck and through
+      the wing change; the forces for each configuration sit beside it.</p>
+    <iframe class="tunnel" src="tunnel/index.html" title="3D smoke tunnel: the roadster with its rear wing up or down" loading="lazy"></iframe>
+    <p class="muted" style="font-size:0.85rem;margin-top:8px"><a href="tunnel/index.html">Open the smoke tunnel full screen →</a>
+      Loads about 30 MB of flow data the first time.</p>
   </section>
 
   <section style="padding-top:0">

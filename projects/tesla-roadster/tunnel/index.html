@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadster Smoke Tunnel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<!-- Built by 04_postprocessing/scripts/make_tunnel_page.py from 05_reports/results_viewer/tunnel_template.html.
+     {"road": {"base": "../explorer/road/", "run": "run01_road_150mph", "cd": 0.3723, "drag": 437.0, "hp": 174.8, "lift": 217.7, "liftF": 151.1, "liftR": 66.6}, "race": {"base": "../explorer/race/", "run": "run02_race_150mph", "cd": 0.5316, "drag": 669.0, "hp": 267.6, "lift": -447.5, "liftF": 289.7, "liftR": -737.2}} = both runs' data paths and forces. Edit the template, not the built copy. -->
+<style>
+:root {
+  --bg: #e9ecef; --panel: #f6f7f8; --stage: #dfe3e7; --fg: #1d242b; --muted: #5d6873; --line: #c9d0d7;
+  --accent: #c2410c; --focus: #1f6feb; --ok: #2f7d4f; --warn: #a15c00; --sel: rgba(194, 65, 12, 0.10);
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --text: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14181d; --panel: #1a1f25; --stage: #0f1317; --fg: #e4e8ec; --muted: #8d98a3; --line: #2a323b;
+    --accent: #f08a4b; --focus: #58a6ff; --ok: #5fc48a; --warn: #f0b45a; --sel: rgba(240, 138, 75, 0.12); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14181d; --panel: #1a1f25; --stage: #0f1317; --fg: #e4e8ec; --muted: #8d98a3; --line: #2a323b;
+  --accent: #f08a4b; --focus: #58a6ff; --ok: #5fc48a; --warn: #f0b45a; --sel: rgba(240, 138, 75, 0.12); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--text); }
+main { max-width: 1240px; margin: 0 auto; padding: 18px 16px 24px; }
+h1 { margin: 0; font: 600 1.45rem/1.2 var(--display); }
+.sub { margin: 4px 0 14px; color: var(--muted); font-size: 0.9rem; max-width: 80ch; }
+.tunnel { display: grid; grid-template-columns: minmax(0, 1fr) 290px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.stage { position: relative; height: min(72vh, 640px); min-height: 380px; background: var(--stage); }
+#view { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.status { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font: 0.85rem var(--mono); text-align: center; padding: 16px; pointer-events: none; }
+.status[hidden] { display: none; }
+.badge { position: absolute; left: 14px; top: 12px; font: 600 0.82rem var(--display); letter-spacing: 0.06em; text-transform: uppercase;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; pointer-events: none; }
+.hint { position: absolute; left: 14px; bottom: 12px; right: 14px; font: 0.74rem var(--mono); color: var(--muted); pointer-events: none; }
+.side { padding: 14px 16px 16px; border-left: 1px solid var(--line); display: flex; flex-direction: column; gap: 15px; overflow-y: auto; max-height: min(72vh, 640px); min-height: 380px; }
+h3 { margin: 0 0 6px; font: 600 0.7rem var(--display); text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); }
+.btns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.btns.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+button { font: 500 0.8rem var(--text); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 4px; cursor: pointer; }
+button:hover { border-color: var(--muted); }
+button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+button.on { background: var(--fg); color: var(--panel); border-color: var(--fg); }
+button:disabled { opacity: 0.45; cursor: progress; }
+#wing button { padding: 10px 4px; font-size: 0.86rem; }
+#wing button small { display: block; font-size: 0.72rem; opacity: 0.75; font-weight: 400; }
+#wing button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
+th, td { text-align: right; padding: 4px 6px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; padding-left: 0; }
+th { font: 500 0.74rem var(--text); color: var(--muted); }
+td { font-family: var(--mono); }
+td:first-child { font-family: var(--text); color: var(--muted); }
+.sel { background: var(--sel); color: var(--fg); font-weight: 600; }
+.rng { display: grid; grid-template-columns: 50px minmax(0, 1fr) 40px; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+.rng input { width: 100%; accent-color: var(--accent); margin: 0; }
+.rng b { font: 500 0.8rem var(--mono); color: var(--fg); text-align: right; }
+.ctl[hidden], .legend[hidden] { display: none; }
+.tiny { font-size: 0.76rem; color: var(--muted); margin: 6px 0 0; }
+#smRead { font-family: var(--mono); color: var(--fg); }
+.legend canvas { width: 100%; height: 10px; display: block; border-radius: 2px; margin-top: 6px; }
+.legend .ends { display: flex; justify-content: space-between; font: 0.72rem var(--mono); color: var(--muted); margin-top: 2px; }
+#smClear { width: 100%; }
+/* embedded in the portfolio page (iframe): no title, the viewer fills the frame */
+.embed main { padding: 0; max-width: none; }
+.embed h1, .embed .sub { display: none; }
+.embed .tunnel { border-radius: 0; border: 0; }
+@media (min-width: 821px) { .embed .stage, .embed .side { height: 100vh; max-height: none; } }
+@media (max-width: 820px) {
+  .tunnel { grid-template-columns: 1fr; }
+  .side { border-left: 0; border-top: 1px solid var(--line); max-height: none; min-height: 0; }
+  .stage { height: 58vh; }
+}
+</style>
+</head>
+<body>
+<script>if (window.self !== window.top) document.documentElement.classList.add('embed');</script>
+<main>
+  <h1>Roadster smoke tunnel: wing up or down</h1>
+  <p class="sub">Flip the rear wing and the car and its whole computed flow field switch between the two runs (150 mph,
+    steady RANS, OpenFOAM). Drag the orange ball to put the smoke anywhere; the forces on the right are for the configuration shown.</p>
+  <div class="tunnel">
+    <div class="stage" id="stage">
+      <canvas id="view" aria-label="3D smoke tunnel: the roadster with a movable smoke wand or rake; the rear wing can be raised or lowered"></canvas>
+      <div class="status" id="status">Loading the car and its flow field…</div>
+      <div class="badge" id="badge">Wing down · road</div>
+      <div class="hint">drag the orange ball to move the smoke · drag elsewhere to turn · right-drag to pan · click, then scroll to zoom</div>
+    </div>
+    <div class="side">
+      <div><h3>Rear wing</h3>
+        <div class="btns two" id="wing">
+          <button data-k="road" class="on">Down<small>road</small></button>
+          <button data-k="race" disabled>Up<small>race, 12°</small></button></div></div>
+      <div><h3>Forces at 150 mph (full car)</h3>
+        <table id="forces"></table>
+        <p class="tiny">Lift: + up, − down (downforce). Averages of iterations 1600–2500.</p></div>
+      <div class="ctl"><h3>Smoke</h3>
+        <div class="btns" id="smMode"><button data-m="off">Off</button><button data-m="wand">Wand</button><button data-m="rake" class="on">Rake</button></div>
+        <p class="tiny" id="smRead">Loading the flow field…</p></div>
+      <div class="ctl" id="smRakeBox"><h3>Rake</h3>
+        <div class="btns two" id="smRake"><button data-r="up" class="on">Upright</button><button data-r="across">Across</button></div>
+        <label class="rng">Probes <input type="range" id="smN" min="3" max="40" value="15"><b id="smNOut">15</b></label></div>
+      <div class="ctl"><h3>Position (inches)</h3>
+        <label class="rng" title="distance behind the nose (negative = ahead of the car)">Along <input type="range" id="smX" step="1"><b id="smXOut"></b></label>
+        <label class="rng" title="sideways from the centreline">Across <input type="range" id="smY" step="1"><b id="smYOut"></b></label>
+        <label class="rng" title="height above the road">Height <input type="range" id="smZ" step="1"><b id="smZOut"></b></label></div>
+      <div class="ctl"><h3>Smoke colour</h3>
+        <div class="btns two" id="smCol"><button data-c="speed" class="on">By speed</button><button data-c="white">White</button></div>
+        <div class="legend" id="smLeg"><canvas id="smLegC" width="240" height="10"></canvas>
+          <div class="ends"><span>0</span><span>100</span><span>200 mph</span></div></div></div>
+      <div class="ctl"><h3>Turbulent spread</h3>
+        <div class="btns two" id="smSpr"><button data-s="1" class="on">On</button><button data-s="0">Off</button></div></div>
+      <div class="ctl"><h3>Car</h3>
+        <div class="btns two" id="fields"><button data-f="plain" class="on">Plain</button><button data-f="Cp">Pressure Cp</button></div>
+        <div class="legend" id="cpLeg" hidden><canvas id="cpLegC" width="240" height="10"></canvas>
+          <div class="ends"><span>−1 suction</span><span>0</span><span>+1 stagnation</span></div></div></div>
+      <div class="ctl"><h3>View</h3>
+        <div class="btns" id="views"><button data-v="side" class="on">Side</button><button data-v="front">Front ¾</button><button data-v="rear">Rear ¾</button>
+          <button data-v="top">Top</button><button data-v="under">Under</button><button data-v="back">Behind</button></div></div>
+      <div class="ctl"><button id="smClear">Clear smoke</button>
+        <p class="tiny">Puffs ride each run's averaged velocity, sampled every 1.6 in, at about 35× slow motion. Spread adds random
+          motion sized by the turbulence k, to suggest mixing; real smoke would also flap with the unsteady wake.</p></div>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+  const D = {"road": {"base": "../explorer/road/", "run": "run01_road_150mph", "cd": 0.3723, "drag": 437.0, "hp": 174.8, "lift": 217.7, "liftF": 151.1, "liftR": 66.6}, "race": {"base": "../explorer/race/", "run": "run02_race_150mph", "cd": 0.5316, "drag": 669.0, "hp": 267.6, "lift": -447.5, "liftF": 289.7, "liftR": -737.2}};
+  const $ = (id) => document.getElementById(id), statusEl = $('status');
+  if (!window.THREE || !THREE.OrbitControls) { statusEl.textContent = 'The 3D library did not load. Check the connection and reload.'; return; }
+  const tok = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const CPSTOPS = [[0, [59, 76, 192]], [0.25, [124, 159, 249]], [0.5, [221, 221, 221]], [0.75, [246, 154, 121]], [1, [180, 4, 38]]];
+  const TURBO = [[0, [48, 18, 59]], [0.15, [70, 117, 237]], [0.35, [27, 207, 212]], [0.5, [97, 252, 108]],
+                 [0.65, [210, 233, 53]], [0.8, [254, 155, 45]], [1, [122, 4, 3]]];
+  function ramp(st, s) { s = Math.min(Math.max(s, 0), 1); let k = 1; while (k < st.length - 1 && st[k][0] < s) k++;
+    const [a, ca] = st[k - 1], [b, cb] = st[k], t = (s - a) / (b - a || 1); return ca.map((c, i) => (c + (cb[i] - c) * t) / 255); }
+  const LUT = Array.from({ length: 256 }, (_, q) => ramp(TURBO, q / 255));
+  function legend(id, st, bands) { const c = $(id), x2 = c.getContext('2d');
+    for (let x = 0; x < c.width; x++) { let s = x / (c.width - 1); if (bands) s = Math.min(Math.floor(s * bands), bands - 1) / (bands - 1);
+      x2.fillStyle = `rgb(${ramp(st, s).map(v => Math.round(v * 255)).join(',')})`; x2.fillRect(x, 0, 1, c.height); } }
+  legend('smLegC', TURBO); legend('cpLegC', CPSTOPS, 24);
+
+  // ---- scene ----
+  const canvas = $('view'), stage = $('stage');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(28, 1, 0.02, 200);
+  const controls = new THREE.OrbitControls(camera, canvas);
+  controls.enableDamping = true; controls.dampingFactor = 0.12; controls.screenSpacePanning = true;
+  controls.minDistance = 0.3; controls.maxDistance = 40; controls.enableZoom = false;
+  canvas.addEventListener('pointerdown', () => { controls.enableZoom = true; });
+  stage.addEventListener('pointerleave', () => { controls.enableZoom = false; });
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x667788, 0.85));
+  const key = new THREE.DirectionalLight(0xffffff, 0.35); key.position.set(-3, 6, 5); scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.2); fill.position.set(6, -2, -5); scene.add(fill);
+  // three.js axes: OpenFOAM x -> x, y -> -z, z -> y
+  const C = new THREE.Vector3(2.9, 0.55, 0);
+  const VIEWS = { side: [2.9, 0.6, 10.5], front: [-3.4, 1.9, 4.6], rear: [8.6, 2.1, 4.4], top: [2.9, 11, 0.001],
+                  under: [2.9, -9.5, 0.001], back: [12.5, 1.3, 0.001] };
+  let viewK = 'side', moved = false;   // reframe on resize until the user turns or zooms the view
+  controls.addEventListener('start', () => { moved = true; });
+  function setView(k) {
+    viewK = k; moved = false;
+    const f = 1.2 * Math.max(1, 1.6 / camera.aspect), d = new THREE.Vector3(...VIEWS[k]).sub(C).multiplyScalar(f);
+    camera.position.copy(C).add(d); controls.target.copy(C);
+    camera.up.set(k === 'top' || k === 'under' ? 1 : 0, k === 'top' || k === 'under' ? 0 : 1, 0); controls.update();
+  }
+
+  // ---- the two configurations ----
+  const SETS = { road: { mesh: null, cp: null, F: null }, race: { mesh: null, cp: null, F: null } };
+  let cur = 'road', F = null, field = 'plain';
+
+  async function unpack(url) {
+    const r = await fetch(url); if (!r.ok) throw new Error(r.status);
+    const b64 = (await r.text()).trim(), bin = atob(b64), raw = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) raw[i] = bin.charCodeAt(i);
+    if (!('DecompressionStream' in window)) throw new Error('nogz');
+    return new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+  }
+  function buildSurface(buf) {           // half car + mirror image
+    const dv = new DataView(buf), hl = dv.getUint32(0, true);
+    const h = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, hl)));
+    let o = 4 + hl; const take = (T, n) => { const a = new T(buf.slice(o, o + n * 4)); o += n * 4; return a; };
+    const P = take(Float32Array, h.nv * 3), tri = take(Uint32Array, h.nt * 3), cp = take(Float32Array, h.nv);
+    const nv = h.nv, pos = new Float32Array(nv * 6), idx = new Uint32Array(h.nt * 6);
+    for (let i = 0; i < nv; i++) { const x = P[3 * i], y = P[3 * i + 1], z = P[3 * i + 2]; pos.set([x, z, -y], 3 * i); pos.set([x, z, y], 3 * (i + nv)); }
+    idx.set(tri);
+    for (let t = 0; t < h.nt; t++) { idx[3 * (h.nt + t)] = tri[3 * t] + nv; idx[3 * (h.nt + t) + 1] = tri[3 * t + 2] + nv; idx[3 * (h.nt + t) + 2] = tri[3 * t + 1] + nv; }
+    const cp2 = new Float32Array(2 * nv); cp2.set(cp); cp2.set(cp, nv);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(nv * 6), 3));
+    g.setIndex(new THREE.BufferAttribute(idx, 1)); g.computeVertexNormals();
+    const mesh = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+    mesh.visible = false; scene.add(mesh);
+    return { mesh, cp: cp2 };
+  }
+  function paint(s) {
+    if (!s.mesh) return;
+    const col = s.mesh.geometry.attributes.color;
+    for (let i = 0; i < col.count; i++) {
+      if (field === 'plain') col.setXYZ(i, 0.70, 0.72, 0.75);
+      else { let q = (s.cp[i] + 1) / 2; q = Math.min(Math.floor(Math.min(Math.max(q, 0), 1) * 24), 23) / 23; const c = ramp(CPSTOPS, q); col.setXYZ(i, c[0], c[1], c[2]); }
+    }
+    col.needsUpdate = true;
+  }
+  function buildFlow(buf) {
+    const hl = new DataView(buf).getUint32(0, true), h = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, hl)));
+    let o = (4 + hl + 3) & ~3; const n = h.nx * h.ny * h.nz;
+    const ux = new Int16Array(buf, o, n); o += 2 * n; const uy = new Int16Array(buf, o, n); o += 2 * n;
+    const uz = new Int16Array(buf, o, n); o += 2 * n; const k = new Uint16Array(buf, o, n);
+    return Object.assign(h, { ux, uy, uz, k });
+  }
+
+  // forces table: both configurations, the one shown highlighted
+  function forces() {
+    const r = D.road, c = D.race, sg = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(0);
+    const rows = [['Cd', r.cd.toFixed(3), c.cd.toFixed(3)], ['Drag, lbf', r.drag.toFixed(0), c.drag.toFixed(0)],
+      ['Drag power, hp', r.hp.toFixed(0), c.hp.toFixed(0)], ['Lift, lbf', sg(r.lift), sg(c.lift)],
+      ['Front axle, lbf', sg(r.liftF), sg(c.liftF)], ['Rear axle, lbf', sg(r.liftR), sg(c.liftR)]];
+    const cl = k => (k === cur ? ' class="sel"' : '');
+    $('forces').innerHTML = `<tr><th></th><th${cl('road')}>Wing down</th><th${cl('race')}>Wing up</th></tr>` +
+      rows.map(x => `<tr><td>${x[0]}</td><td${cl('road')}>${x[1]}</td><td${cl('race')}>${x[2]}</td></tr>`).join('');
+  }
+
+  // ---- smoke ----
+  const SM = { mode: 'rake', rake: 'up', n: 15, col: 'speed', spread: true };
+  const MPH = 2.23694, DT = 0.03 / 67.056, MAXP = 32000, AGE = 640, IN = 39.37;
+  let head = 0, visible = true;
+  const wand = new THREE.Vector3(-0.46, -0.40, 0.90);   // OpenFOAM axes: ahead of the nose, near side, rake from 1.7 to 4.3 ft high
+  const PP = new Float32Array(MAXP * 3), AA = new Float32Array(MAXP).fill(-1), SP = new Float32Array(MAXP);
+  const gp = new Float32Array(MAXP * 3), gc = new Float32Array(MAXP * 3), ga = new Float32Array(MAXP);
+  const pg = new THREE.BufferGeometry();
+  pg.setAttribute('position', new THREE.BufferAttribute(gp, 3).setUsage(THREE.DynamicDrawUsage));
+  pg.setAttribute('pcol', new THREE.BufferAttribute(gc, 3).setUsage(THREE.DynamicDrawUsage));
+  pg.setAttribute('palpha', new THREE.BufferAttribute(ga, 1).setUsage(THREE.DynamicDrawUsage));
+  const pmat = new THREE.ShaderMaterial({
+    uniforms: { size: { value: 0.032 }, scale: { value: 500 } }, transparent: true, depthWrite: false,
+    vertexShader: `attribute vec3 pcol; attribute float palpha; varying vec3 vC; varying float vA; uniform float size, scale;
+      void main() { vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv;
+        gl_PointSize = palpha > 0.0 ? max(1.5, size * scale / -mv.z) : 0.0; vC = pcol; vA = palpha; }`,
+    fragmentShader: `varying vec3 vC; varying float vA;
+      void main() { vec2 c = gl_PointCoord - 0.5; float r = dot(c, c); if (r > 0.25) discard; gl_FragColor = vec4(vC, vA * (1.0 - 3.2 * r)); }`,
+  });
+  const pts = new THREE.Points(pg, pmat); pts.frustumCulled = false; scene.add(pts);
+
+  const HANDLE = new THREE.Group(); HANDLE.visible = false; scene.add(HANDLE);
+  const hMat = new THREE.MeshLambertMaterial({ color: 0xe8590c, emissive: 0x3a1200 });
+  const grab = []; let knob = null;
+  function nozzleOffsets() {
+    if (SM.mode !== 'rake') return [[0, 0, 0]];
+    const span = SM.rake === 'up' ? 0.8 : 1.2, out = [];
+    for (let q = 0; q < SM.n; q++) { const o = (q / (SM.n - 1) - 0.5) * span; out.push(SM.rake === 'up' ? [0, 0, o] : [0, o, 0]); }
+    return out;
+  }
+  function buildHandle() {
+    while (HANDLE.children.length) HANDLE.remove(HANDLE.children[0]);
+    grab.length = 0;
+    knob = new THREE.Group(); HANDLE.add(knob);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.05, 22, 16), hMat); knob.add(ball);
+    const zone = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 8), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+    knob.add(zone); grab.push(zone, ball);
+    if (SM.mode === 'rake') {
+      const span = SM.rake === 'up' ? 0.8 : 1.2, bar = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, span, 10), hMat);
+      if (SM.rake === 'across') bar.rotation.x = Math.PI / 2;
+      HANDLE.add(bar); grab.push(bar);
+      const nd = new THREE.SphereGeometry(0.016, 10, 8);
+      for (const n of nozzleOffsets()) { const s = new THREE.Mesh(nd, hMat); s.position.set(0.02, n[2], -n[1]); HANDLE.add(s); }
+    } else {
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.09, 14), hMat);
+      cone.rotation.z = -Math.PI / 2; cone.position.x = 0.075; knob.add(cone);
+    }
+    const lg = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -1, 0)]);
+    const drop = new THREE.Line(lg, new THREE.LineDashedMaterial({ color: 0xe8590c, dashSize: 0.04, gapSize: 0.03 }));
+    drop.computeLineDistances(); drop.name = 'drop'; HANDLE.add(drop);
+    placeHandle();
+  }
+  function placeHandle() { HANDLE.position.set(wand.x, wand.z, -wand.y); const d = HANDLE.getObjectByName('drop'); if (d) d.scale.y = wand.z; }
+
+  function sample(x, y, z, out) {        // OpenFOAM axes; false outside the box or inside the car
+    const s = y < 0 ? -1 : 1, fx = (x - F.x0) / F.d, fy = (Math.abs(y) - F.y0) / F.d, fz = (z - F.z0) / F.d;
+    if (fx < 0 || fy < 0 || fz < 0 || fx >= F.nx - 1 || fy >= F.ny - 1 || fz >= F.nz - 1) return false;
+    const i = fx | 0, j = fy | 0, k = fz | 0, tx = fx - i, ty = fy - j, tz = fz - k;
+    let u = 0, v = 0, w = 0, kk = 0, bad = 0;
+    for (let c = 0; c < 8; c++) {
+      const di = c & 1, dj = (c >> 1) & 1, dk = c >> 2, wt = (di ? tx : 1 - tx) * (dj ? ty : 1 - ty) * (dk ? tz : 1 - tz);
+      const n = i + di + F.nx * (j + dj + F.ny * (k + dk));
+      if (F.ux[n] === -32768) { bad += wt; continue; }
+      u += wt * F.ux[n]; v += wt * F.uy[n]; w += wt * F.uz[n]; kk += wt * F.k[n];
+    }
+    if (bad > 0.5) return false;
+    const g = 1 / (1 - bad);
+    out[0] = u * F.us * g; out[1] = s * v * F.us * g; out[2] = w * F.us * g; out[3] = kk * F.ks * g; return true;
+  }
+  const gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) * 2;
+  const S0 = [0, 0, 0, 0], S1 = [0, 0, 0, 0];
+  function step() {
+    if (SM.mode !== 'off') {
+      const ns = nozzleOffsets(), per = ns.length > 1 ? 1 : 5, j = ns.length > 1 ? 0.006 : 0.016;
+      for (const n of ns) for (let e = 0; e < per; e++) {
+        const i = head; head = (head + 1) % MAXP;
+        PP[3 * i] = wand.x + n[0] + (Math.random() - 0.5) * j; PP[3 * i + 1] = wand.y + n[1] + (Math.random() - 0.5) * j;
+        PP[3 * i + 2] = Math.max(0.005, wand.z + n[2] + (Math.random() - 0.5) * j); AA[i] = 0;
+      }
+    }
+    for (let i = 0; i < MAXP; i++) {
+      if (AA[i] < 0) continue;
+      const x = PP[3 * i], y = PP[3 * i + 1], z = PP[3 * i + 2];
+      if (AA[i] >= AGE || !sample(x, y, z, S0)) { AA[i] = -1; continue; }
+      if (!sample(x + 0.5 * DT * S0[0], y + 0.5 * DT * S0[1], z + 0.5 * DT * S0[2], S1)) { AA[i] = -1; continue; }
+      let nx = x + DT * S1[0], ny = y + DT * S1[1], nz = z + DT * S1[2];
+      if (SM.spread) { const d = Math.sqrt(2 * S1[3] / 3) * DT; nx += d * gauss(); ny += d * gauss(); nz += d * gauss(); }
+      PP[3 * i] = nx; PP[3 * i + 1] = ny; PP[3 * i + 2] = Math.max(0.002, nz);
+      SP[i] = Math.hypot(S1[0], S1[1], S1[2]); AA[i] += 1;
+    }
+  }
+  function upload() {
+    const white = SM.col === 'white';
+    for (let i = 0; i < MAXP; i++) {
+      if (AA[i] < 0) { ga[i] = 0; continue; }
+      gp[3 * i] = PP[3 * i]; gp[3 * i + 1] = PP[3 * i + 2]; gp[3 * i + 2] = -PP[3 * i + 1];
+      const t = AA[i] / AGE; ga[i] = Math.min(1, (AA[i] + 1) / 5) * (1 - t * t) * (white ? 0.42 : 0.7);
+      const c = white ? [0.95, 0.96, 0.97] : LUT[Math.min(255, Math.round(SP[i] * MPH / 200 * 255))];
+      gc[3 * i] = c[0]; gc[3 * i + 1] = c[1]; gc[3 * i + 2] = c[2];
+    }
+    pg.attributes.position.needsUpdate = true; pg.attributes.pcol.needsUpdate = true; pg.attributes.palpha.needsUpdate = true;
+  }
+
+  // ---- controls ----
+  const sx = $('smX'), sy = $('smY'), sz = $('smZ');
+  function readout() {
+    if (!F) return;
+    $('smXOut').textContent = (wand.x * IN).toFixed(0); $('smYOut').textContent = (wand.y * IN).toFixed(0); $('smZOut').textContent = (wand.z * IN).toFixed(0);
+    sx.value = Math.round(wand.x * IN); sy.value = Math.round(wand.y * IN); sz.value = Math.round(wand.z * IN);
+    $('smRead').textContent = SM.mode === 'off' ? 'Smoke off.' : sample(wand.x, wand.y, wand.z, S0)
+      ? `At the ball: ${(Math.hypot(S0[0], S0[1], S0[2]) * MPH).toFixed(0)} mph` : 'The ball is inside the car: move it out.';
+  }
+  function setWand(x, y, z) {
+    if (!F) return;
+    const xm = F.x0 + (F.nx - 1.01) * F.d, ym = F.y0 + (F.ny - 1.01) * F.d, zm = F.z0 + (F.nz - 1.01) * F.d;
+    wand.set(Math.min(Math.max(x, F.x0 + 0.01), xm), Math.min(Math.max(y, -ym), ym), Math.min(Math.max(z, 0.02), zm));
+    placeHandle(); readout();
+  }
+  [sx, sy, sz].forEach(s => s.addEventListener('input', () => setWand(sx.value / IN, sy.value / IN, sz.value / IN)));
+  const seg = (id, fn) => $(id).addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.disabled) return;
+    $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); fn(b.dataset); });
+  seg('smMode', d => { SM.mode = d.m; $('smRakeBox').hidden = SM.mode !== 'rake'; HANDLE.visible = !!F && SM.mode !== 'off'; buildHandle(); readout(); });
+  seg('smRake', d => { SM.rake = d.r; buildHandle(); });
+  seg('smCol', d => { SM.col = d.c; $('smLeg').hidden = SM.col !== 'speed'; bg(); });
+  seg('smSpr', d => { SM.spread = d.s === '1'; });
+  seg('fields', d => { field = d.f; $('cpLeg').hidden = field !== 'Cp'; paint(SETS.road); paint(SETS.race); });
+  seg('views', d => setView(d.v));
+  $('smN').addEventListener('input', e => { SM.n = +e.target.value; $('smNOut').textContent = SM.n; buildHandle(); });
+  $('smClear').addEventListener('click', () => { AA.fill(-1); upload(); });
+
+  function show(k) {                     // flip the wing: swap the car and the flow field
+    const s = SETS[k]; if (!s.mesh || !s.F) return;
+    cur = k; F = s.F;
+    SETS.road.mesh && (SETS.road.mesh.visible = k === 'road'); SETS.race.mesh && (SETS.race.mesh.visible = k === 'race');
+    AA.fill(-1); upload();               // smoke restarts in the new flow
+    $('badge').textContent = k === 'race' ? 'Wing up · race' : 'Wing down · road';
+    $('wing').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.k === k));
+    forces(); readout();
+  }
+  seg('wing', d => show(d.k));
+
+  // drag the ball: it moves in the plane facing you
+  const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+  const dragPlane = new THREE.Plane(), hitP = new THREE.Vector3(), off = new THREE.Vector3(), camDir = new THREE.Vector3();
+  let dragging = false;
+  function rayAt(e) { const r = canvas.getBoundingClientRect();
+    ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ptr, camera); }
+  function overHandle(e) { if (!HANDLE.visible) return false; rayAt(e); return ray.intersectObjects(grab, false).length > 0; }
+  stage.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || !overHandle(e)) return;
+    dragging = true; controls.enabled = false; canvas.style.cursor = 'grabbing';
+    camera.getWorldDirection(camDir); dragPlane.setFromNormalAndCoplanarPoint(camDir, HANDLE.position);
+    if (ray.ray.intersectPlane(dragPlane, hitP)) off.copy(HANDLE.position).sub(hitP); else off.set(0, 0, 0);
+    e.preventDefault();
+  }, true);
+  window.addEventListener('pointermove', e => {
+    if (dragging) { rayAt(e); if (ray.ray.intersectPlane(dragPlane, hitP)) { hitP.add(off); setWand(hitP.x, -hitP.z, hitP.y); } return; }
+    if (!e.buttons && e.target === canvas) canvas.style.cursor = overHandle(e) ? 'grab' : '';
+  });
+  window.addEventListener('pointerup', () => { if (dragging) { dragging = false; controls.enabled = true; canvas.style.cursor = ''; } });
+  new IntersectionObserver(es => { visible = es[0].isIntersecting; }).observe(stage);
+
+  function size() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    pmat.uniforms.scale.value = h * renderer.getPixelRatio() / (2 * Math.tan(camera.fov * Math.PI / 360));
+    if (!moved && w > 0 && h > 0) setView(viewK);
+  }
+  new ResizeObserver(size).observe(stage);
+  function bg() { scene.background = new THREE.Color(SM.col === 'white' ? '#11161b' : (tok('--stage') || '#dfe3e7')); }
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', bg);
+  new MutationObserver(bg).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  bg(); size(); setView('side'); forces();
+  let last = performance.now();
+  (function loop(now) {
+    controls.update();
+    if (knob && HANDLE.visible) {
+      const px = camera.position.distanceTo(HANDLE.position) * 2 * Math.tan(camera.fov * Math.PI / 360) / stage.clientHeight;
+      knob.scale.setScalar(Math.max(1, 9 * px / 0.05));
+    }
+    if (F && visible && now) { const n = Math.min(3, Math.max(1, Math.round((now - last) / 16.7))); for (let s = 0; s < n; s++) step(); upload(); }
+    if (now) last = now;
+    renderer.render(scene, camera); requestAnimationFrame(loop);
+  })();
+
+  // ---- load: the road car first (shown), then the race car in the background ----
+  async function load(k) {
+    const [sb, fb] = await Promise.all([unpack(D[k].base + 'surface.gz.txt'), unpack(D[k].base + 'flow.gz.txt')]);
+    Object.assign(SETS[k], buildSurface(sb)); SETS[k].F = buildFlow(fb); paint(SETS[k]);
+  }
+  (async function () {
+    try {
+      await load('road');
+      const F0 = SETS.road.F;
+      sx.min = Math.ceil(F0.x0 * IN); sx.max = Math.floor((F0.x0 + (F0.nx - 1) * F0.d) * IN);
+      sy.max = Math.floor((F0.ny - 1) * F0.d * IN); sy.min = -sy.max; sz.min = 1; sz.max = Math.floor((F0.nz - 1) * F0.d * IN);
+      show('road'); HANDLE.visible = SM.mode !== 'off'; buildHandle(); setWand(wand.x, wand.y, wand.z); statusEl.hidden = true;
+      $('wing').querySelector('[data-k=race]').textContent = '';
+      $('wing').querySelector('[data-k=race]').innerHTML = 'Loading…<small>race car</small>';
+      await load('race');
+      const b = $('wing').querySelector('[data-k=race]'); b.disabled = false; b.innerHTML = 'Up<small>race, 12°</small>';
+    } catch (e) {
+      statusEl.hidden = false;
+      statusEl.textContent = e.message === 'nogz' ? 'This browser cannot unpack the 3D data. Try a current Safari, Chrome or Firefox.'
+                                                  : 'The 3D data did not load.';
+    }
+  })();
+})();
+</script>
+</body>
+</html>
